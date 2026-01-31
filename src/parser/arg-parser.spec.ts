@@ -1,12 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-  GenLex,
   GenlexTracer,
   SingleParser,
   Stream,
   TracingGenLex,
 } from '@masala/parser'
-import { writeParserLogs } from '../debug/write-parser-logs.js'
 import { createArgGrammar } from './arg-parser.js'
 import { createArgumentTokens } from './args-details/tokens/argument-tokens.js'
 import { ArgumentNode } from './ast.js'

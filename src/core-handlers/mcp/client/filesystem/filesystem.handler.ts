@@ -1,9 +1,12 @@
-import { errorToString } from '@massivoto/kit'
-import { ActionResult } from '../../../../handlers/action-result.js'
+import { ActionResult, errorToString } from '@massivoto/kit'
 import { BaseCommandHandler } from '../../../../handlers/base-command-handler.js'
 import { FilesystemClient } from './filesystem.client.js'
 
 export class FileSystemWriterHandler extends BaseCommandHandler<void> {
+  constructor() {
+    super('@file/write')
+  }
+
   async run(
     args: Record<string, any>,
     context: any,

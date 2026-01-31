@@ -9,13 +9,18 @@
  * - R-CMD-61 to R-CMD-63: Action Resolution
  * - AC-CMD-01 to AC-CMD-07: Acceptance Criteria
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import {createEmptyExecutionContext, ExecutionContext, RegistryBundle, RegistryConflictError } from '@massivoto/kit'
-import { CommandRegistry } from './command-registry.js'
-import { CommandHandler } from './types.js'
-import { BaseCommandHandler } from './base-command-handler.js'
+import { beforeEach, describe, expect, it } from 'vitest'
+import {
+  ActionResult,
+  CommandHandler,
+  createEmptyExecutionContext,
+  ExecutionContext,
+  RegistryBundle,
+  RegistryConflictError,
+} from '@massivoto/kit'
 import { CommandNotFoundError } from './errors.js'
-import { ActionResult } from './action-result.js'
+import { BaseCommandHandler } from '../handlers/index.js'
+import { CoreCommandRegistry } from './command-registry.js'
 
 // =============================================================================
 // Test Fixtures - Social Media Automation Theme
@@ -25,8 +30,11 @@ import { ActionResult } from './action-result.js'
  * Mock handler for @social/post - posts to social media
  */
 class PostToSocialHandler extends BaseCommandHandler<{ postId: string }> {
-  readonly id = '@social/post'
   readonly type = 'command' as const
+
+  constructor() {
+    super('@social/post')
+  }
 
   async run(
     args: Record<string, any>,
@@ -42,9 +50,11 @@ class PostToSocialHandler extends BaseCommandHandler<{ postId: string }> {
  * Mock handler for @social/schedule - schedules a post
  */
 class SchedulePostHandler extends BaseCommandHandler<{ scheduledId: string }> {
-  readonly id = '@social/schedule'
   readonly type = 'command' as const
 
+  constructor() {
+    super('@social/schedule')
+  }
   async run(
     args: Record<string, any>,
     context: ExecutionContext,
@@ -63,10 +73,13 @@ class EngagementMetricsHandler extends BaseCommandHandler<{
   likes: number
   shares: number
 }> {
-  readonly id = '@analytics/engagement'
   readonly type = 'command' as const
   initCalled = false
   disposeCalled = false
+
+  constructor() {
+    super('@analytics/engagement')
+  }
 
   async init(): Promise<void> {
     this.initCalled = true
@@ -135,13 +148,13 @@ describe('CommandRegistry - Interface Migration', () => {
 
   describe('R-CMD-03: CommandRegistry wraps BaseComposableRegistry', () => {
     it('should wrap BaseComposableRegistry and delegate bundle management', async () => {
-      const registry = new CommandRegistry()
+      const registry = new CoreCommandRegistry()
       const bundle = createMockBundle('social', [new PostToSocialHandler()])
 
       registry.addBundle(bundle)
       await registry.reload()
 
-      const handler = registry.resolve('@social/post')
+      const handler = await registry.resolve('@social/post')
       expect(handler).toBeDefined()
       expect(handler?.id).toBe('@social/post')
     })
@@ -149,32 +162,31 @@ describe('CommandRegistry - Interface Migration', () => {
 
   describe('R-CMD-04: CommandRegistry.resolve returns handler or undefined', () => {
     it('should return handler for registered action', async () => {
-      const registry = new CommandRegistry()
+      const registry = new CoreCommandRegistry()
       registry.addBundle(
         createMockBundle('social', [new PostToSocialHandler()]),
       )
       await registry.reload()
 
-      const handler = registry.resolve('@social/post')
+      const handler = await registry.resolve('@social/post')
       expect(handler).toBeInstanceOf(PostToSocialHandler)
     })
 
-    it('should return undefined for unregistered action', async () => {
-      const registry = new CommandRegistry()
+    it('should throw for unregistered action', async () => {
+      const registry = new CoreCommandRegistry()
       registry.addBundle(
         createMockBundle('social', [new PostToSocialHandler()]),
       )
       await registry.reload()
 
-      const handler = registry.resolve('@unknown/action')
-      expect(handler).toBeUndefined()
+      await expect(registry.resolve('@unknown/action')).rejects.toThrow()
     })
   })
 
   describe('R-CMD-05: CommandRegistry.reload delegates to inner registry', () => {
     it('should call init on all handlers during reload', async () => {
       const handler = new EngagementMetricsHandler()
-      const registry = new CommandRegistry()
+      const registry = new CoreCommandRegistry()
       registry.addBundle(createMockBundle('analytics', [handler]))
 
       expect(handler.initCalled).toBe(false)
@@ -184,7 +196,7 @@ describe('CommandRegistry - Interface Migration', () => {
 
     it('should call dispose on existing handlers before reload', async () => {
       const handler1 = new EngagementMetricsHandler()
-      const registry = new CommandRegistry()
+      const registry = new CoreCommandRegistry()
       registry.addBundle(createMockBundle('analytics', [handler1]))
 
       await registry.reload()
@@ -252,10 +264,10 @@ describe('CommandRegistry - Handler Interface', () => {
 // =============================================================================
 
 describe('CommandRegistry - Action Resolution', () => {
-  let registry: CommandRegistry
+  let registry: CoreCommandRegistry
 
   beforeEach(async () => {
-    registry = new CommandRegistry()
+    registry = new CoreCommandRegistry()
     registry.addBundle(
       createMockBundle('social', [
         new PostToSocialHandler(),
@@ -269,15 +281,15 @@ describe('CommandRegistry - Action Resolution', () => {
   })
 
   describe('R-CMD-61: resolve(actionPath) looks up handler', () => {
-    it('should find handler by action path', () => {
-      const handler = registry.resolve('@social/post')
+    it('should find handler by action path', async () => {
+      const handler = await registry.resolve('@social/post')
       expect(handler).toBeDefined()
       expect(handler?.id).toBe('@social/post')
     })
 
-    it('should find handlers from different bundles', () => {
-      const socialHandler = registry.resolve('@social/schedule')
-      const analyticsHandler = registry.resolve('@analytics/engagement')
+    it('should find handlers from different bundles', async () => {
+      const socialHandler = await registry.resolve('@social/schedule')
+      const analyticsHandler = await registry.resolve('@analytics/engagement')
 
       expect(socialHandler?.id).toBe('@social/schedule')
       expect(analyticsHandler?.id).toBe('@analytics/engagement')
@@ -285,24 +297,23 @@ describe('CommandRegistry - Action Resolution', () => {
   })
 
   describe('R-CMD-62: Action path format @package/name', () => {
-    it('should resolve full action path from ActionNode', () => {
+    it('should resolve full action path from ActionNode', async () => {
       // ActionNode.path example: ['@social', 'post'] joined as '@social/post'
       const actionPath = ['@social', 'post'].join('/')
-      const handler = registry.resolve(actionPath)
+      const handler = await registry.resolve(actionPath)
 
       expect(handler).toBeDefined()
       expect(handler?.id).toBe('@social/post')
     })
   })
 
-  describe('R-CMD-63: Return undefined for unknown actions', () => {
-    it('should return undefined for non-existent action', () => {
-      const handler = registry.resolve('@twitter/post')
-      expect(handler).toBeUndefined()
+  describe('R-CMD-63: Throw for unknown actions', () => {
+    it('should throw for non-existent action', async () => {
+      await expect(registry.resolve('@twitter/post')).rejects.toThrow()
     })
 
-    it('should not throw for unknown actions', () => {
-      expect(() => registry.resolve('@unknown/action')).not.toThrow()
+    it('should throw for unknown actions', async () => {
+      await expect(registry.resolve('@unknown/action')).rejects.toThrow()
     })
   })
 })
@@ -322,21 +333,20 @@ describe('CommandRegistry - Acceptance Criteria', () => {
     it.todo('should resolve @utils/set to SetHandler')
   })
 
-  describe('AC-CMD-03: resolve unknown returns undefined', () => {
-    it('should return undefined for @unknown/action', async () => {
-      const registry = new CommandRegistry()
+  describe('AC-CMD-03: resolve unknown throws', () => {
+    it('should throw for @unknown/action', async () => {
+      const registry = new CoreCommandRegistry()
       registry.addBundle(createMockBundle('test', [new PostToSocialHandler()]))
       await registry.reload()
 
-      const handler = registry.resolve('@unknown/action')
-      expect(handler).toBeUndefined()
+      await expect(registry.resolve('@unknown/action')).rejects.toThrow()
     })
   })
 
   describe('AC-CMD-04: reload calls init on all handlers', () => {
     it('should call init() on handlers after reload', async () => {
       const handler = new EngagementMetricsHandler()
-      const registry = new CommandRegistry()
+      const registry = new CoreCommandRegistry()
       registry.addBundle(createMockBundle('analytics', [handler]))
 
       await registry.reload()
@@ -348,7 +358,7 @@ describe('CommandRegistry - Acceptance Criteria', () => {
   describe('AC-CMD-05: Custom init executes successfully', () => {
     it('should execute custom init on handler', async () => {
       const customInitHandler = new EngagementMetricsHandler()
-      const registry = new CommandRegistry()
+      const registry = new CoreCommandRegistry()
       registry.addBundle(createMockBundle('analytics', [customInitHandler]))
 
       await registry.reload()
@@ -359,7 +369,7 @@ describe('CommandRegistry - Acceptance Criteria', () => {
 
   describe('AC-CMD-06: Duplicate handler throws RegistryConflictError', () => {
     it('should throw RegistryConflictError for duplicate @social/post', async () => {
-      const registry = new CommandRegistry()
+      const registry = new CoreCommandRegistry()
       registry.addBundle(
         createMockBundle('bundle1', [new PostToSocialHandler()]),
       )
@@ -396,7 +406,7 @@ describe('CommandRegistry - Acceptance Criteria', () => {
 describe('CommandRegistry - Additional Behaviors', () => {
   describe('keys() returns all registered action paths', () => {
     it('should return all handler ids', async () => {
-      const registry = new CommandRegistry()
+      const registry = new CoreCommandRegistry()
       registry.addBundle(
         createMockBundle('social', [
           new PostToSocialHandler(),
@@ -415,7 +425,7 @@ describe('CommandRegistry - Additional Behaviors', () => {
 
   describe('has() checks if action exists', () => {
     it('should return true for registered action', async () => {
-      const registry = new CommandRegistry()
+      const registry = new CoreCommandRegistry()
       registry.addBundle(
         createMockBundle('social', [new PostToSocialHandler()]),
       )
@@ -425,7 +435,7 @@ describe('CommandRegistry - Additional Behaviors', () => {
     })
 
     it('should return false for unregistered action', async () => {
-      const registry = new CommandRegistry()
+      const registry = new CoreCommandRegistry()
       registry.addBundle(
         createMockBundle('social', [new PostToSocialHandler()]),
       )
@@ -437,7 +447,7 @@ describe('CommandRegistry - Additional Behaviors', () => {
 
   describe('entries() returns all handlers with provenance', () => {
     it('should return entries with bundleId', async () => {
-      const registry = new CommandRegistry()
+      const registry = new CoreCommandRegistry()
       registry.addBundle(
         createMockBundle('social', [new PostToSocialHandler()]),
       )

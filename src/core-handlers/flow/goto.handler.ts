@@ -12,9 +12,8 @@
  * @flow/goto target="done" if={counter >= 3}
  * ```
  */
-import { ExecutionContext } from "@massivoto/kit"
-import type { ActionResult } from '../../command-registry/action-result.js'
-import { BaseCommandHandler } from '../../command-registry/base-command-handler.js'
+import { ActionResult, ExecutionContext } from '@massivoto/kit'
+import { BaseCommandHandler } from '../../handlers/index.js'
 
 /**
  * Special action result for goto that includes the target label.
@@ -26,8 +25,11 @@ export interface GotoResult {
 }
 
 export class GotoHandler extends BaseCommandHandler<GotoResult> {
-  readonly id = '@flow/goto'
   readonly type = 'command' as const
+
+  constructor() {
+    super('@flow/goto')
+  }
 
   async run(
     args: Record<string, any>,

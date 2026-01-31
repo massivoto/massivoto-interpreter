@@ -1,7 +1,12 @@
-import {createEmptyExecutionContext, createEmptyScopeChain, lookup, pushScope, write } from "@massivoto/kit"
-import { describe, it, expect } from 'vitest'
-
-
+import {
+  createEmptyExecutionContext,
+  createEmptyScopeChain,
+  lookup,
+  pushScope,
+  write,
+} from '@massivoto/kit'
+import { describe, expect, it } from 'vitest'
+import { runProgram } from '../program-runner.js'
 
 /**
  * Test file: scope-lifecycle.spec.ts

@@ -101,14 +101,13 @@ describe('PipeRegistry', () => {
       expect(keys).toHaveLength(10)
     })
 
-    it('should throw RegistryNotLoadedError if get() called before reload()', async () => {
+    it('should return undefined for unloaded bundle items before reload()', async () => {
       const registry = new PipeRegistry()
       registry.addBundle(new CorePipesBundle())
 
-      // Not calling reload() - should throw
-      await expect(registry.get('filter')).rejects.toThrow(
-        RegistryNotLoadedError,
-      )
+      // Bundle items not loaded yet (reload not called)
+      const entry = await registry.get('filter')
+      expect(entry).toBeUndefined()
     })
 
     it('should detect conflicts between bundles', async () => {

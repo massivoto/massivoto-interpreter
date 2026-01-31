@@ -17,18 +17,19 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc --build",
-    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "build": "npm run clean && tsc --build",
+    "clean": "rimraf dist && rimraf tsconfig.tsbuildinfo",
     "prepublishOnly": "npm run build",
     "test": "npm run build && vitest run",
     "prettier": "prettier --write \"src/**/*.ts\" \"./*.json\""
   },
   "peerDependencies": {
-    "@massivoto/runtime": "^0.1.0"
+    "@massivoto/kit": "*",
+    "@massivoto/runtime": "*"
   },
   "dependencies": {
     "@masala/parser": "^2.0.0",
-    "@massivoto/kit": "portal:../platform/packages/kit",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "lodash.set": "^4.3.2",
     "zod": "^3.24.0"
@@ -36,6 +37,8 @@
   "devDependencies": {
     "@types/lodash.set": "^4.3.9",
     "@types/node": "^22.10.5",
+    "prettier": "^3.7.4",
+    "rimraf": "^6.1.2",
     "typescript": "^5.7.2",
     "vite-node": "^3.1.1",
     "vitest": "^3.2.4"

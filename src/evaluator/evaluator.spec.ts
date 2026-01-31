@@ -1692,7 +1692,13 @@ describe('ExpressionEvaluator - Store Access', () => {
 
 import { PipeExpressionNode } from '../parser/args-details/pipe-parser/pipe-parser.js'
 import { PipeRegistry, CorePipesBundle } from '../pipe-registry/index.js'
-import {createEmptyScopeChain, ExecutionContext, fromPartialContext, pushScope, write } from "@massivoto/kit"
+import {
+  createEmptyScopeChain,
+  ExecutionContext,
+  fromPartialContext,
+  pushScope,
+  write,
+} from '@massivoto/kit'
 
 describe('ExpressionEvaluator - Pipe Expressions', () => {
   // Create evaluator with pipe registry

@@ -1,9 +1,10 @@
-import { CommandHandler } from './command-registry.js'
-import { ActionResult } from './action-result.js'
-import { ExecutionContext } from "@massivoto/kit"
-
+import { ActionResult, CommandHandler, ExecutionContext } from '@massivoto/kit'
 
 export abstract class BaseCommandHandler<T> implements CommandHandler<T> {
+  constructor(public id: string) {}
+  type = 'command' as const
+  async init(): Promise<void> {}
+  async dispose(): Promise<void> {}
   abstract run(
     args: Record<string, any>,
     context: ExecutionContext,

@@ -9,9 +9,7 @@
  * R-GRID-84: Return selected: GridItem[] array as value for output variable
  */
 
-import { ExecutionContext } from "@massivoto/kit"
-import { ActionResult } from '../../handlers/action-result.js'
-import { CommandHandler } from '../../handlers/command-registry.js'
+import { ActionResult, CommandHandler, ExecutionContext } from '@massivoto/kit'
 
 interface GridItem {
   id: string
@@ -106,7 +104,9 @@ export class GridHandler implements CommandHandler<GridItem[]> {
 
     try {
       // Wait for user response
-      const response = await instance.waitForResponse<{ selected: GridItem[] }>()
+      const response = await instance.waitForResponse<{
+        selected: GridItem[]
+      }>()
 
       // Restore status
       context.status = previousStatus ?? 'running'

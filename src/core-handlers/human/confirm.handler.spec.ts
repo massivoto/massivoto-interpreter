@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ConfirmHandler } from './confirm.handler.js'
-import {AppletInstance, AppletLauncher, AppletTerminator, createEmptyExecutionContext } from "@massivoto/kit"
-
+import {
+  AppletInstance,
+  AppletLauncher,
+  AppletTerminator,
+  createEmptyExecutionContext,
+} from '@massivoto/kit'
 
 /**
  * Test file: confirm.handler.spec.ts
