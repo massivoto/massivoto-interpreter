@@ -105,7 +105,9 @@ describe('GeminiProvider', () => {
       global.fetch = mockFetch
 
       const provider = new GeminiProvider('test-key')
-      const result = await provider.generateText({ prompt: 'Tell me about Emma' })
+      const result = await provider.generateText({
+        prompt: 'Tell me about Emma',
+      })
 
       expect(result.text).toBe('Emma is a social media expert')
       expect(result.tokensUsed).toBe(25)
@@ -206,7 +208,10 @@ describe('GeminiProvider', () => {
       global.fetch = mockFetch
 
       const provider = new GeminiProvider('test-key')
-      await provider.generateText({ prompt: 'Hello', model: 'gemini-1.5-flash' })
+      await provider.generateText({
+        prompt: 'Hello',
+        model: 'gemini-1.5-flash',
+      })
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('gemini-1.5-flash'),
@@ -251,9 +256,9 @@ describe('GeminiProvider', () => {
 
       const provider = new GeminiProvider('test-key')
 
-      await expect(
-        provider.generateText({ prompt: 'Hello' }),
-      ).rejects.toThrow('Rate limit exceeded')
+      await expect(provider.generateText({ prompt: 'Hello' })).rejects.toThrow(
+        'Rate limit exceeded',
+      )
     })
   })
 

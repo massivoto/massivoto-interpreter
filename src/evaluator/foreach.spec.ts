@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest'
-import {
-  CommandHandler,
-  CommandRegistry,
-} from '../handlers/command-registry.js'
+import { describe, expect, it } from 'vitest'
 import { buildProgramParser } from '../parser/program-parser.js'
-import { createEmptyExecutionContext } from "@massivoto/kit"
+import { CommandHandler, createEmptyExecutionContext } from '@massivoto/kit'
+import { runProgram } from '../program-runner.js'
+import { CoreInterpreter } from '../core-interpreter.js'
+import { CoreCommandRegistry } from '../command-registry/index.js'
+import { BasicHandler } from '../core-handlers/basic-handler.js'
 
 describe('ForEach Execution', () => {
   describe('R-FE-101 & R-FE-102: executeForEach implementation', () => {
@@ -34,22 +34,23 @@ describe('ForEach Execution', () => {
       context.data.items = ['first', 'second', 'third']
 
       const logged: string[] = []
-      const logHandler: CommandHandler<void> = {
-        run: async (args: Record<string, any>) => {
+      const logHandler: CommandHandler<void> = new BasicHandler<void>(
+        '@utils/log',
+        async (args: Record<string, any>) => {
           logged.push(args.message)
           return { success: true, cost: 0, messages: [] }
         },
-      }
+      )
 
-      const registry = new CommandRegistry()
-      registry.register('@utils/log', logHandler)
+      const registry = new CoreCommandRegistry()
+      registry.addRegistryItem('@utils/log', logHandler)
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
 @utils/log message=item
 @block/end`)
 
-      const interpreter = new Interpreter(registry)
+      const interpreter = new CoreInterpreter(registry)
       await interpreter.executeProgram(program, context)
 
       expect(logged).toEqual(['first', 'second', 'third'])
@@ -84,15 +85,16 @@ describe('ForEach Execution', () => {
       ]
 
       const logged: string[] = []
-      const logHandler: CommandHandler<void> = {
-        run: async (args: Record<string, any>) => {
+      const logHandler: CommandHandler<void> = new BasicHandler(
+        'id',
+        async (args: Record<string, any>) => {
           logged.push(args.message)
           return { success: true, cost: 0, messages: [] }
         },
-      }
+      )
 
-      const registry = new CommandRegistry()
-      registry.register('@utils/log', logHandler)
+      const registry = new CoreCommandRegistry()
+      registry.addRegistryItem('@utils/log', logHandler)
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=users -> user
@@ -101,7 +103,7 @@ describe('ForEach Execution', () => {
 @block/end
 @block/end`)
 
-      const interpreter = new Interpreter(registry)
+      const interpreter = new CoreInterpreter(registry)
       await interpreter.executeProgram(program, context)
 
       expect(logged).toContain('Emma: Hello')
@@ -114,17 +116,18 @@ describe('ForEach Execution', () => {
       context.data.inner = ['x', 'y', 'z']
 
       const innerIndices: number[] = []
-      const logHandler: CommandHandler<void> = {
-        run: async (args: Record<string, any>) => {
+      const logHandler: CommandHandler<void> = new BasicHandler(
+        'id',
+        async (args: Record<string, any>) => {
           if (typeof args.message === 'number') {
             innerIndices.push(args.message)
           }
           return { success: true, cost: 0, messages: [] }
         },
-      }
+      )
 
-      const registry = new CommandRegistry()
-      registry.register('@utils/log', logHandler)
+      const registry = new CoreCommandRegistry()
+      registry.addRegistryItem('@utils/log', logHandler)
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=outer -> o
@@ -133,7 +136,7 @@ describe('ForEach Execution', () => {
 @block/end
 @block/end`)
 
-      const interpreter = new Interpreter(registry)
+      const interpreter = new CoreInterpreter(registry)
       await interpreter.executeProgram(program, context)
 
       // Inner loop runs 3 times for each outer iteration (2 times)
@@ -196,22 +199,23 @@ describe('ForEach Execution', () => {
       context.data.items = ['a', 'b', 'c']
 
       const indices: number[] = []
-      const logHandler: CommandHandler<void> = {
-        run: async (args: Record<string, any>) => {
+      const logHandler: CommandHandler<void> = new BasicHandler(
+        'id',
+        async (args: Record<string, any>) => {
           indices.push(args.message)
           return { success: true, cost: 0, messages: [] }
         },
-      }
+      )
 
-      const registry = new CommandRegistry()
-      registry.register('@utils/log', logHandler)
+      const registry = new CoreCommandRegistry()
+      registry.addRegistryItem('@utils/log', logHandler)
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
 @utils/log message=_index
 @block/end`)
 
-      const interpreter = new Interpreter(registry)
+      const interpreter = new CoreInterpreter(registry)
       await interpreter.executeProgram(program, context)
 
       expect(indices).toEqual([0, 1, 2])
@@ -222,22 +226,23 @@ describe('ForEach Execution', () => {
       context.data.items = ['a', 'b', 'c']
 
       const counts: number[] = []
-      const logHandler: CommandHandler<void> = {
-        run: async (args: Record<string, any>) => {
+      const logHandler: CommandHandler<void> = new BasicHandler(
+        'id',
+        async (args: Record<string, any>) => {
           counts.push(args.message)
           return { success: true, cost: 0, messages: [] }
         },
-      }
+      )
 
-      const registry = new CommandRegistry()
-      registry.register('@utils/log', logHandler)
+      const registry = new CoreCommandRegistry()
+      registry.addRegistryItem('@utils/log', logHandler)
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
 @utils/log message=_count
 @block/end`)
 
-      const interpreter = new Interpreter(registry)
+      const interpreter = new CoreInterpreter(registry)
       await interpreter.executeProgram(program, context)
 
       expect(counts).toEqual([1, 2, 3])
@@ -248,22 +253,23 @@ describe('ForEach Execution', () => {
       context.data.items = ['a', 'b', 'c']
 
       const lengths: number[] = []
-      const logHandler: CommandHandler<void> = {
-        run: async (args: Record<string, any>) => {
+      const logHandler: CommandHandler<void> = new BasicHandler(
+        'id',
+        async (args: Record<string, any>) => {
           lengths.push(args.message)
           return { success: true, cost: 0, messages: [] }
         },
-      }
+      )
 
-      const registry = new CommandRegistry()
-      registry.register('@utils/log', logHandler)
+      const registry = new CoreCommandRegistry()
+      registry.addRegistryItem('@utils/log', logHandler)
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
 @utils/log message=_length
 @block/end`)
 
-      const interpreter = new Interpreter(registry)
+      const interpreter = new CoreInterpreter(registry)
       await interpreter.executeProgram(program, context)
 
       expect(lengths).toEqual([3, 3, 3])
@@ -274,22 +280,23 @@ describe('ForEach Execution', () => {
       context.data.items = ['a', 'b', 'c']
 
       const firsts: boolean[] = []
-      const logHandler: CommandHandler<void> = {
-        run: async (args: Record<string, any>) => {
+      const logHandler: CommandHandler<void> = new BasicHandler(
+        'id',
+        async (args: Record<string, any>) => {
           firsts.push(args.message)
           return { success: true, cost: 0, messages: [] }
         },
-      }
+      )
 
-      const registry = new CommandRegistry()
-      registry.register('@utils/log', logHandler)
+      const registry = new CoreCommandRegistry()
+      registry.addRegistryItem('@utils/log', logHandler)
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
 @utils/log message=_first
 @block/end`)
 
-      const interpreter = new Interpreter(registry)
+      const interpreter = new CoreInterpreter(registry)
       await interpreter.executeProgram(program, context)
 
       expect(firsts).toEqual([true, false, false])
@@ -300,22 +307,23 @@ describe('ForEach Execution', () => {
       context.data.items = ['a', 'b', 'c']
 
       const lasts: boolean[] = []
-      const logHandler: CommandHandler<void> = {
-        run: async (args: Record<string, any>) => {
+      const logHandler: CommandHandler<void> = new BasicHandler(
+        'id',
+        async (args: Record<string, any>) => {
           lasts.push(args.message)
           return { success: true, cost: 0, messages: [] }
         },
-      }
+      )
 
-      const registry = new CommandRegistry()
-      registry.register('@utils/log', logHandler)
+      const registry = new CoreCommandRegistry()
+      registry.addRegistryItem('@utils/log', logHandler)
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
 @utils/log message=_last
 @block/end`)
 
-      const interpreter = new Interpreter(registry)
+      const interpreter = new CoreInterpreter(registry)
       await interpreter.executeProgram(program, context)
 
       expect(lasts).toEqual([false, false, true])
@@ -328,23 +336,25 @@ describe('ForEach Execution', () => {
       const oddValues: boolean[] = []
       const evenValues: boolean[] = []
 
-      const logOddHandler: CommandHandler<void> = {
-        run: async (args: Record<string, any>) => {
+      const logOddHandler: CommandHandler<void> = new BasicHandler(
+        'odd',
+        async (args: Record<string, any>) => {
           oddValues.push(args.message)
           return { success: true, cost: 0, messages: [] }
         },
-      }
+      )
 
-      const logEvenHandler: CommandHandler<void> = {
-        run: async (args: Record<string, any>) => {
+      const logEvenHandler: CommandHandler<void> = new BasicHandler(
+        'even',
+        async (args: Record<string, any>) => {
           evenValues.push(args.message)
           return { success: true, cost: 0, messages: [] }
         },
-      }
+      )
 
-      const registry = new CommandRegistry()
-      registry.register('@log/odd', logOddHandler)
-      registry.register('@log/even', logEvenHandler)
+      const registry = new CoreCommandRegistry()
+      registry.addRegistryItem('@log/odd', logOddHandler)
+      registry.addRegistryItem('@log/even', logEvenHandler)
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
@@ -352,7 +362,7 @@ describe('ForEach Execution', () => {
 @log/even message=_even
 @block/end`)
 
-      const interpreter = new Interpreter(registry)
+      const interpreter = new CoreInterpreter(registry)
       await interpreter.executeProgram(program, context)
 
       // Index 0: odd=true (1st), even=false

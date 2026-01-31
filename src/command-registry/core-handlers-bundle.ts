@@ -10,80 +10,18 @@
  * - R-GOTO-44: @flow/exit handler
  * - R-GOTO-47: @flow/return handler
  */
-import type {ExecutionContext, RegistryBundle } from '@massivoto/kit'
-import type { CommandHandler } from './types.js'
-import { BaseCommandHandler } from './base-command-handler.js'
-import type { ActionResult } from './action-result.js'
+import type { CommandHandler, RegistryBundle } from '@massivoto/kit'
 import { GotoHandler } from '../core-handlers/flow/goto.handler.js'
 import { ExitHandler } from '../core-handlers/flow/exit.handler.js'
 import { ReturnHandler } from '../core-handlers/flow/return.handler.js'
-import { ConfirmHandler, GridHandler } from '../core-handlers/human/index.js'
-import { TextHandler, ImageHandler } from '../core-handlers/ai/index.js'
-
-// =============================================================================
-// Core Handlers with RegistryItem interface
-// =============================================================================
-
-/**
- * LogHandler - @utils/log
- *
- * Logs a message to the console and appends to context.userLogs.
- *
- * @example
- * ```dsl
- * @utils/log message="Hello, Social Media!"
- * ```
- */
-class LogHandler extends BaseCommandHandler<void> {
-  readonly id = '@utils/log'
-  readonly type = 'command' as const
-
-  async run(
-    args: Record<string, any>,
-    context: ExecutionContext,
-  ): Promise<ActionResult<void>> {
-    const message = args.message as string
-    if (!message) {
-      throw new Error('Message is required')
-    }
-    // Log to console
-    console.log(`Log: ${message}`)
-
-    // R-CONFIRM-124: Append to userLogs
-    if (context.userLogs) {
-      context.userLogs.push(message)
-    }
-
-    return this.handleSuccess('Logged successfully', undefined)
-  }
-}
-
-/**
- * SetHandler - @utils/set
- *
- * Sets a value in the execution context.
- *
- * @example
- * ```dsl
- * @utils/set input="value" => $result
- * ```
- */
-class SetHandler extends BaseCommandHandler<any> {
-  readonly id = '@utils/set'
-  readonly type = 'command' as const
-
-  async run(
-    args: Record<string, any>,
-    context: ExecutionContext,
-  ): Promise<ActionResult<any>> {
-    const input = args.input as any
-
-    if (input === undefined) {
-      throw new Error('Input is required')
-    }
-    return this.handleSuccess('Set successfully', input)
-  }
-}
+import { LogHandler } from '../core-handlers/utils/log.handler.js'
+import { SetHandler } from '../core-handlers/utils/set.handler.js'
+import {
+  ConfirmHandler,
+  GridHandler,
+  ImageHandler,
+  TextHandler,
+} from '../core-handlers/index.js'
 
 // =============================================================================
 // CoreHandlersBundle

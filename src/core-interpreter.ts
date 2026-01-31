@@ -1,16 +1,34 @@
-import {ActionLog, nowTs, toReadableDate, ProgramResult, CostInfo , BatchResult, } from '@massivoto/kit'
+import {
+  ActionLog,
+  BatchResult,
+  cloneExecutionContext,
+  CommandRegistry,
+  CostInfo,
+  createEarlyExit,
+  createNormalCompletion,
+  createReturn,
+  ExecutionContext,
+  Interpreter,
+  nowTs,
+  popScope,
+  ProgramResult,
+  pushScope,
+  toReadableDate,
+  write,
+} from '@massivoto/kit'
 import lodashSet from 'lodash.set'
 
 import type { GotoResult } from './core-handlers/flow/goto.handler.js'
 import type { ExitResult } from './core-handlers/flow/exit.handler.js'
 import type { ReturnResult } from './core-handlers/flow/return.handler.js'
-import {BlockNode, ForEachArgNode, InstructionNode, ProgramNode, StatementNode} from "./parser/ast.js";
-import { ExecutionContext,   createNormalCompletion,
-    createEarlyExit,
-    createReturn, cloneExecutionContext} from '@massivoto/kit'
-import {CommandRegistry} from "./command-registry/index.js";
-import {ExpressionEvaluator} from "./evaluator/index.js";
-import {popScope, pushScope, write} from "./evaluator/scope-chain.js";
+import {
+  BlockNode,
+  ForEachArgNode,
+  InstructionNode,
+  ProgramNode,
+  StatementNode,
+} from './parser/ast.js'
+import { ExpressionEvaluator } from './evaluator/index.js'
 
 /**
  * Flow control result from a statement execution.
@@ -97,7 +115,7 @@ interface StatementListResult {
   cost: number
 }
 
-export class CoreInterpreter {
+export class CoreInterpreter implements Interpreter {
   constructor(
     private registry: CommandRegistry,
     private evaluator = new ExpressionEvaluator(),
@@ -151,7 +169,7 @@ export class CoreInterpreter {
     const start = nowTs()
     const { package: pkg, name } = instruction.action
     const id = `@${pkg}/${name}`
-    const handler = this.registry.resolve(id)
+    const handler = await this.registry.resolve(id)
     if (!handler) throw new Error(`Command not found: ${id}`)
 
     const args: Record<string, any> = {}

@@ -13,9 +13,8 @@
  * @flow/return value=result if={isComplete}
  * ```
  */
-import type { ActionResult } from '../../command-registry/action-result.js'
-import { BaseCommandHandler } from '../../command-registry/base-command-handler.js'
-import { ExecutionContext } from "@massivoto/kit"
+import { ActionResult, ExecutionContext } from '@massivoto/kit'
+import { BaseCommandHandler } from '../../handlers/index.js'
 
 /**
  * Special action result for return that includes the return value.
@@ -27,8 +26,11 @@ export interface ReturnResult {
 }
 
 export class ReturnHandler extends BaseCommandHandler<ReturnResult> {
-  readonly id = '@flow/return'
   readonly type = 'command' as const
+
+  constructor() {
+    super('@flow/return')
+  }
 
   async run(
     args: Record<string, any>,

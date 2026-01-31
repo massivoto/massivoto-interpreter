@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { TextHandler } from './text.handler.js'
-import { createEmptyExecutionContext } from '../../../domain/execution-context.js'
 import type { AiProvider, TextResult } from './types.js'
+import { createEmptyExecutionContext } from '@massivoto/kit'
 
 /**
  * Test file: text.handler.spec.ts
@@ -118,7 +118,10 @@ describe('TextHandler', () => {
       })
       handler.setProvider('gemini', mockProvider)
 
-      await handler.run({ prompt: 'Write something', temperature: 0.2 }, context)
+      await handler.run(
+        { prompt: 'Write something', temperature: 0.2 },
+        context,
+      )
 
       expect(mockProvider.generateText).toHaveBeenCalledWith(
         expect.objectContaining({ temperature: 0.2 }),
@@ -215,10 +218,7 @@ describe('TextHandler', () => {
       })
       handler.setProvider('gemini', mockProvider)
 
-      const result = await handler.run(
-        { prompt: 'Write about Emma' },
-        context,
-      )
+      const result = await handler.run({ prompt: 'Write about Emma' }, context)
 
       expect(result.success).toBe(true)
       expect(result.value).toBe('Emma loves automation')
@@ -236,10 +236,7 @@ describe('TextHandler', () => {
       })
       handler.setProvider('gemini', mockProvider)
 
-      const result = await handler.run(
-        { prompt: 'Write something' },
-        context,
-      )
+      const result = await handler.run({ prompt: 'Write something' }, context)
 
       expect(result.cost).toBe(100)
     })
@@ -254,14 +251,9 @@ describe('TextHandler', () => {
       })
       handler.setProvider('gemini', mockProvider)
 
-      const result = await handler.run(
-        { prompt: 'Write something' },
-        context,
-      )
+      const result = await handler.run({ prompt: 'Write something' }, context)
 
-      expect(result.messages).toContainEqual(
-        expect.stringContaining('42'),
-      )
+      expect(result.messages).toContainEqual(expect.stringContaining('42'))
     })
   })
 
@@ -271,10 +263,7 @@ describe('TextHandler', () => {
       const context = createEmptyExecutionContext('emma-123')
       context.env = {} // No API key
 
-      const result = await handler.run(
-        { prompt: 'Write something' },
-        context,
-      )
+      const result = await handler.run({ prompt: 'Write something' }, context)
 
       expect(result.success).toBe(false)
       expect(result.fatalError).toContain('GEMINI_API_KEY')
@@ -285,10 +274,7 @@ describe('TextHandler', () => {
       const context = createEmptyExecutionContext('emma-123')
       context.env = {}
 
-      const result = await handler.run(
-        { prompt: 'Write something' },
-        context,
-      )
+      const result = await handler.run({ prompt: 'Write something' }, context)
 
       expect(result.fatalError).toContain('env.dist')
     })
@@ -318,15 +304,14 @@ describe('TextHandler', () => {
       context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider: AiProvider = {
         name: 'mock',
-        generateText: vi.fn().mockRejectedValue(new Error('Rate limit exceeded')),
+        generateText: vi
+          .fn()
+          .mockRejectedValue(new Error('Rate limit exceeded')),
         generateImage: vi.fn().mockResolvedValue({ base64: '', costUnits: 0 }),
       }
       handler.setProvider('gemini', mockProvider)
 
-      const result = await handler.run(
-        { prompt: 'Write something' },
-        context,
-      )
+      const result = await handler.run({ prompt: 'Write something' }, context)
 
       expect(result.success).toBe(false)
       expect(result.fatalError).toContain('Rate limit exceeded')

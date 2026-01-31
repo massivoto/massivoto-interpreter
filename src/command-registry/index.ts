@@ -17,13 +17,11 @@
  */
 
 // Types
-export type { CommandHandler } from './types.js'
-export type { ActionResult } from './action-result.js'
 
 // Classes
-export { BaseCommandHandler } from './base-command-handler.js'
-export { CommandRegistry } from './command-registry.js'
 export { CoreHandlersBundle } from './core-handlers-bundle.js'
+export { CoreCommandRegistry } from './command-registry.js'
 
 // Errors
 export { CommandNotFoundError } from './errors.js'
+export { createStandardCommandRegistry } from './standard-registry.js'

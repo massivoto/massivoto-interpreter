@@ -1,15 +1,16 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { Stream } from '@masala/parser'
 import { registerStandardCommandHandlers } from '../../handlers/register-handlers.js'
 
 import { InstructionNode } from '../../parser/ast.js'
 import { buildInstructionParser } from '../../parser/instruction-parser.js'
-import { ExecutionContext, fromPartialContext } from "@massivoto/kit"
+import { ExecutionContext, fromPartialContext } from '@massivoto/kit'
+import { CoreInterpreter } from '../../core-interpreter.js'
 
-describe('Interpreter with parsed instruction', () => {
-  const registry = registerStandardCommandHandlers()
-  const interpreter = new Interpreter(registry)
+describe('Interpreter with parsed instruction', async () => {
+  const registry = await registerStandardCommandHandlers()
+  const interpreter = new CoreInterpreter(registry)
   const parser = buildInstructionParser()
 
   const baseContext: ExecutionContext = fromPartialContext({

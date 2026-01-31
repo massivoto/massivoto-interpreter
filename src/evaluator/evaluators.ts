@@ -9,9 +9,8 @@ import {
   IdentifierNode,
 } from '../parser/ast.js'
 import { PipeExpressionNode } from '../parser/args-details/pipe-parser/pipe-parser.js'
-import { lookup } from './scope-chain.js'
 import { PipeRegistry } from '../pipe-registry/index.js'
-import { ExecutionContext } from "@massivoto/kit"
+import { ExecutionContext, lookup } from '@massivoto/kit'
 
 /**
  * Custom error class for evaluation failures.
