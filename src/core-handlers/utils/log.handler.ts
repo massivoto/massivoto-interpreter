@@ -1,10 +1,12 @@
-import { ExecutionContext } from "@massivoto/kit"
-import { ActionResult } from '../../handlers/action-result.js'
-import { CommandHandler } from '../../handlers/command-registry.js'
+import { ActionResult, ExecutionContext } from '@massivoto/kit'
+import { BaseCommandHandler } from '../../handlers/index.js'
 
-export class LogHandler implements CommandHandler<void> {
-  readonly id = '@utils/log'
+export class LogHandler extends BaseCommandHandler<void> {
   readonly type = 'command' as const
+
+  constructor() {
+    super('@utils/log')
+  }
 
   async init(): Promise<void> {}
   async dispose(): Promise<void> {}
@@ -14,13 +16,8 @@ export class LogHandler implements CommandHandler<void> {
     context: ExecutionContext,
   ): Promise<ActionResult<void>> {
     const message = args.message
-    if (message === undefined || message === null) {
-      return {
-        success: false,
-        fatalError: 'Message is required',
-        messages: ['Missing required argument: message'],
-        cost: 0,
-      }
+    if (!message) {
+      return this.handleFailure('Message is required', 'Message is required')
     }
     const messageStr = String(message)
 
@@ -32,10 +29,6 @@ export class LogHandler implements CommandHandler<void> {
       context.userLogs.push(messageStr)
     }
 
-    return {
-      success: true,
-      messages: [`Logged: ${messageStr}`],
-      cost: 0,
-    }
+    return this.handleSuccess(`Logged: ${messageStr}`, undefined)
   }
 }

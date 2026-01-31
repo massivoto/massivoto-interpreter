@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { SetHandler } from './set.handler.js'
-import { createEmptyExecutionContext } from '../../../domain/execution-context.js'
+import { createEmptyExecutionContext } from '@massivoto/kit'
 
 /**
  * Test file: set.handler.spec.ts

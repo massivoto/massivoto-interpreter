@@ -11,9 +11,7 @@
  * R-CONFIRM-106: Return approved boolean as value
  */
 
-import { ExecutionContext } from "@massivoto/kit"
-import { ActionResult } from '../../handlers/action-result.js'
-import { CommandHandler } from '../../handlers/command-registry.js'
+import { ActionResult, CommandHandler, ExecutionContext } from '@massivoto/kit'
 
 export class ConfirmHandler implements CommandHandler<boolean> {
   readonly id = '@human/confirm'

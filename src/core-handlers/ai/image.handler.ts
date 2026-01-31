@@ -15,20 +15,22 @@
  * @ai/image provider="gemini" prompt="Logo for {brand}" size="square" style="illustration" output=logo
  * ```
  */
-import { BaseCommandHandler } from '../../command-registry/base-command-handler.js'
-import type { ActionResult } from '../../command-registry/action-result.js'
 import type { AiProvider, AiProviderName, ImageRequest } from './types.js'
 import { DEFAULT_AI_PROVIDER } from './types.js'
 import { GeminiProvider } from './providers/gemini.provider.js'
-import { ExecutionContext } from "@massivoto/kit"
+import { ActionResult, ExecutionContext } from '@massivoto/kit'
+import { BaseCommandHandler } from '../../handlers/index.js'
 
 const SUPPORTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']
 
 export class ImageHandler extends BaseCommandHandler<string> {
-  readonly id = '@ai/image'
   readonly type = 'command' as const
 
   private providers: Map<string, AiProvider> = new Map()
+
+  constructor() {
+    super('@ai/image')
+  }
 
   /**
    * Set a provider for testing or custom implementations.
@@ -44,7 +46,7 @@ export class ImageHandler extends BaseCommandHandler<string> {
     // R-AI-20: Validate required prompt argument
     const prompt = args.prompt
     if (prompt === undefined || prompt === null || prompt === '') {
-      return this.handleFailure('Prompt is required')
+      return this.handleFailure('Prompt is required', 'Prompt is required')
     }
 
     // R-AI-21: Get optional arguments with defaults
@@ -54,27 +56,25 @@ export class ImageHandler extends BaseCommandHandler<string> {
 
     // AC-05: Validate provider
     if (!SUPPORTED_PROVIDERS.includes(providerName as AiProviderName)) {
-      return this.handleFailure(
-        `Unknown provider "${providerName}". Valid options: ${SUPPORTED_PROVIDERS.join(', ')}`,
-      )
+      const msg = `Unknown provider "${providerName}". Valid options: ${SUPPORTED_PROVIDERS.join(', ')}`
+      return this.handleFailure(msg, msg)
     }
 
     // R-AI-33: Get API key from environment
     const apiKey = this.getApiKey(providerName, context)
     if (!apiKey) {
-      return this.handleFailure(
-        `Missing GEMINI_API_KEY environment variable. Copy env.dist to .env and add your API key.`,
-      )
-    }
-
-    // Get or create provider
-    let provider = this.providers.get(providerName)
-    if (!provider) {
-      provider = this.createProvider(providerName, apiKey)
-      this.providers.set(providerName, provider)
+      const msg = `Missing GEMINI_API_KEY environment variable. Copy env.dist to .env and add your API key.`
+      return this.handleFailure(msg, msg)
     }
 
     try {
+      // Get or create provider
+      let provider = this.providers.get(providerName)
+      if (!provider) {
+        provider = this.createProvider(providerName, apiKey)
+        this.providers.set(providerName, provider)
+      }
+
       // R-AI-22: Prompt expression resolution is done by interpreter before handler
       const result = await provider.generateImage({
         prompt,
@@ -93,8 +93,9 @@ export class ImageHandler extends BaseCommandHandler<string> {
       }
     } catch (error) {
       // R-AI-43: Handle provider errors gracefully
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return this.handleFailure(errorMessage)
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
+      return this.handleFailure(errorMessage, errorMessage)
     }
   }
 

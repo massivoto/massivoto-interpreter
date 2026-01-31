@@ -2,14 +2,13 @@
  * @web/fetch url=string maxlength=number start=number raw=boolean
  * @web/fetch url=required maxlength=5000 start=0 raw=false
  */
-import { errorToString, ExecutionContext } from '@massivoto/kit'
-import { ActionResult } from '../../../../handlers/action-result.js'
+import { ActionResult, errorToString, ExecutionContext } from '@massivoto/kit'
 import { BaseCommandHandler } from '../../../../handlers/base-command-handler.js'
 import { FetchClient } from './fetch.client.js'
 
 export class FetchHandler extends BaseCommandHandler<string> {
   constructor() {
-    super()
+    super('@web/fetch')
   }
 
   async run(

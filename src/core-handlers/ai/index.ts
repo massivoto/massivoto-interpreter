@@ -3,8 +3,7 @@
  *
  * R-AI-01: Create ai/ directory in core-handlers with index barrel export
  */
-export { TextHandler } from './text.handler.js'
-export { ImageHandler } from './image.handler.js'
+
 export type {
   AiProvider,
   AiProviderName,

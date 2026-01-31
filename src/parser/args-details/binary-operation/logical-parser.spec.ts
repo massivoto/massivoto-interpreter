@@ -12,7 +12,7 @@ import { comparativeParser } from './comparative-parser.js'
 import { equalityParser } from './equality-parser.js'
 import { logicalAndParser, logicalOrParser } from './logical-parser.js'
 import { buildMultiplicativeParser } from './multiplicative-parser.js'
-import {writeParserLogs} from "../../debug/write-parser-logs.js";
+import { writeParserLogs } from '../../debug/write-parser-logs.js'
 
 let tracer: GenlexTracer
 function buildLogicalParserForTests(): SingleParser<BinaryExpressionNode> {

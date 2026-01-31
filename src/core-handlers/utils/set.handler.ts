@@ -1,33 +1,24 @@
-import { ActionResult } from '../../handlers/action-result.js'
-import { CommandHandler } from '../../handlers/command-registry.js'
-import { ExecutionContext } from "@massivoto/kit"
+import { ActionResult, ExecutionContext } from '@massivoto/kit'
+import { BaseCommandHandler } from '../../handlers/index.js'
 
-export class SetHandler implements CommandHandler<any> {
-  readonly id = '@utils/set'
+export class SetHandler extends BaseCommandHandler<any> {
   readonly type = 'command' as const
+
+  constructor() {
+    super('@utils/set')
+  }
 
   async init(): Promise<void> {}
   async dispose(): Promise<void> {}
-
   async run(
     args: Record<string, any>,
-    _context: ExecutionContext,
+    context: ExecutionContext,
   ): Promise<ActionResult<any>> {
-    const input = args.input
+    const input = args.input as any
 
     if (input === undefined) {
-      return {
-        success: false,
-        fatalError: 'Input is required',
-        messages: ['Missing required argument: input'],
-        cost: 0,
-      }
+      return this.handleFailure('Input is required', 'Input is required')
     }
-    return {
-      success: true,
-      value: input,
-      messages: ['Set successfully'],
-      cost: 0,
-    }
+    return this.handleSuccess('Set successfully', input)
   }
 }

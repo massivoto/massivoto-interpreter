@@ -13,9 +13,8 @@
  * @flow/exit code=1 if={hasError}
  * ```
  */
-import type { ActionResult } from '../../command-registry/action-result.js'
-import { BaseCommandHandler } from '../../command-registry/base-command-handler.js'
-import { ExecutionContext } from "@massivoto/kit"
+import { ActionResult, ExecutionContext } from '@massivoto/kit'
+import { BaseCommandHandler } from '../../handlers/index.js'
 
 /**
  * Special action result for exit that includes the exit code.
@@ -27,8 +26,11 @@ export interface ExitResult {
 }
 
 export class ExitHandler extends BaseCommandHandler<ExitResult> {
-  readonly id = '@flow/exit'
   readonly type = 'command' as const
+
+  constructor() {
+    super('@flow/exit')
+  }
 
   async run(
     args: Record<string, any>,
