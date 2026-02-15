@@ -11,7 +11,7 @@
  *   CorePipesBundle,
  *   PipeFunction,
  *   BasePipeFunction,
- * } from './pipe-registry'
+ * } from './pipe-registry.js'
  *
  * // Set up registry
  * const registry = new PipeRegistry()
