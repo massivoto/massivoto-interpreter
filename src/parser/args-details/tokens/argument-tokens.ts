@@ -1,5 +1,7 @@
 import { IGenLex, SingleParser, leanToken } from '@masala/parser'
 import {
+  FileLiteralNode,
+  GlobLiteralNode,
   IdentifierNode,
   LiteralBooleanNode,
   LiteralNumberNode,
@@ -12,6 +14,10 @@ import {
   numberLiteral,
   stringLiteral,
 } from '../../shared-parser.js'
+import {
+  fileLiteralParser,
+  globLiteralParser,
+} from '../../file/file-path-parser.js'
 
 export interface UnaryTokens {
   NOT: SingleParser<'!'>
@@ -63,6 +69,8 @@ export interface ArgTokens extends UnaryTokens {
   LBRACKET: SingleParser<'['>
   RBRACKET: SingleParser<']'>
   ARROW: SingleParser<'->'>
+  FILE_PATH: SingleParser<FileLiteralNode>
+  GLOB_PATH: SingleParser<GlobLiteralNode>
   //EQUALITY_OP: Token<'==' | '!='>
   // ADDITION_OPS: SingleParser<'+' | '-'>
   // MULTIPLY_OPS: SingleParser<'*' | '/' | '%'>
@@ -107,6 +115,10 @@ export function createArgumentTokens(genlex: IGenLex): ArgTokens {
     'BOOLEAN_LITERAL',
     1500,
   ) // true can be confused with IDENTIFIER 'true', but identifier don't accept reserved words
+
+  // R-FP-11, R-FP-12: File/glob path tokens must beat operators (*, ., /)
+  const GLOB_PATH_TOKEN = genlex.tokenize(globLiteralParser, 'GLOB_PATH', 650)
+  const FILE_PATH_TOKEN = genlex.tokenize(fileLiteralParser, 'FILE_PATH', 700)
 
   /*const PIPE_EXPRESSION = genlex.tokenize(
     pipeExpression,
@@ -157,5 +169,13 @@ export function createArgumentTokens(genlex: IGenLex): ArgTokens {
     LBRACKET: LBRACKET.map(leanToken) as SingleParser<'['>,
     RBRACKET: RBRACKET.map(leanToken) as SingleParser<']'>,
     ARROW: ARROW.map(leanToken) as SingleParser<'->'>,
+    GLOB_PATH: GLOB_PATH_TOKEN.map(leanToken).map((v: string) => ({
+      type: 'literal-glob' as const,
+      value: v,
+    })),
+    FILE_PATH: FILE_PATH_TOKEN.map(leanToken).map((v: string) => ({
+      type: 'literal-file' as const,
+      value: v,
+    })),
   }
 }

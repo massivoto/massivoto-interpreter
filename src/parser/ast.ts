@@ -20,6 +20,8 @@ export type LiteralNode =
   | LiteralNumberNode
   | LiteralBooleanNode
   | LiteralNullNode
+  | FileLiteralNode
+  | GlobLiteralNode
 
 // foo.bar or (foo).bar.baz
 // Not supporting computed properties (foo[expr]) for now
@@ -80,6 +82,16 @@ export interface LiteralBooleanNode {
 export interface LiteralNullNode {
   type: 'literal-null'
   value: null
+}
+
+export interface FileLiteralNode {
+  type: 'literal-file'
+  value: string // e.g. "~/images/hero.png" (with ~/ prefix kept)
+}
+
+export interface GlobLiteralNode {
+  type: 'literal-glob'
+  value: string // e.g. "~/images/races/*.jpg" (with ~/ prefix kept)
 }
 
 export interface ArrayLiteralNode {

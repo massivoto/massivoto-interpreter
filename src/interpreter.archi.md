@@ -1,6 +1,6 @@
 # Architecture: Interpreter
 
-**Last updated:** 2026-01-26
+**Last updated:** 2026-02-20
 
 ## Parent
 
@@ -96,7 +96,8 @@ Interpreter uses:    StatementResult (internal aggregation)
 │  │  evaluateUnary()     ─► !, -, +                                          │  │
 │  │  evaluateBinary()    ─► ==, !=, <, <=, >, >=, +, -, *, /, %              │  │
 │  │  evaluateLogical()   ─► && (short-circuit), || (short-circuit)           │  │
-│  │  evaluatePipe()      ─► {input | pipe:arg | ...}                         │  │
+│  │  evaluatePipe()      ─► {input | pipe:arg | ...}                         │
+│  (file/glob literals  ─► ~/path parsed as literal-file / literal-glob)    │  │
 │  └──────────────────────────────────────────────────────────────────────────┘  │
 │                                    │                                            │
 │                                    ▼                                            │

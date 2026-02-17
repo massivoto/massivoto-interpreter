@@ -117,7 +117,7 @@ The ROADMAP defines three variable levels:
 **Test:** `npx vitest run packages/runtime/src/compiler/interpreter/scope-lifecycle.spec.ts`
 **Progress:** 4/4 (100%)
 
-- [x] R-SCOPE-61: Conditional block (`@start/block if=...`) does NOT create new scope
+- [x] R-SCOPE-61: Conditional block (`@block/begin if=...`) does NOT create new scope
 - [x] R-SCOPE-62: forEach block creates child scope for iterator variable
 - [x] R-SCOPE-63: Child scope is cleared/popped when forEach iteration ends
 - [x] R-SCOPE-64: Scope variables do not leak to parent after block exit
@@ -184,7 +184,7 @@ The ROADMAP defines three variable levels:
 - [x] AC-SCOPE-07: Given instruction `@api/call output=data.user`, when executed, then `context.data.data.user` is set (no special casing)
 
 **Scope Lifecycle:**
-- [x] AC-SCOPE-08: Given conditional block `@start/block if=true` with `@utils/set key="x" value="inside"`, when block exits, then `context.data.x` equals `"inside"` (no scope created)
+- [x] AC-SCOPE-08: Given conditional block `@block/begin if=true` with `@utils/set key="x" value="inside"`, when block exits, then `context.data.x` equals `"inside"` (no scope created)
 - [x] AC-SCOPE-09: Given forEach with `item="tweet"`, when iteration runs, then `context.scope.tweet` is set to current item
 - [x] AC-SCOPE-10: Given forEach that set `scope.tweet`, when forEach completes, then `context.scope.tweet` is cleared
 
@@ -320,11 +320,11 @@ function write(name: string, value: any, chain: ScopeChain): void {
 ```dsl
 @utils/set key="users" value=[{name: "Emma", tweets: [1,2]}, {name: "Carlos", tweets: [3]}]
 
-@start/forEach item="user" of=users           # push scope, set scope.user
-  @start/forEach item="tweet" of=user.tweets  # push scope, set scope.tweet
+@block/begin forEach=users -> user              # push scope, set scope.user
+  @block/begin forEach=user.tweets -> tweet    # push scope, set scope.tweet
     @utils/log message=user.name              # walks chain: tweet scope -> user scope
     @utils/log message=tweet                  # found in current scope
-  @end/forEach                                # pop scope (tweet gone)
+  @block/end                                  # pop scope (tweet gone)
   @utils/log message=user.name                # still works (user scope)
-@end/forEach                                  # pop scope (user gone)
+@block/end                                    # pop scope (user gone)
 ```
