@@ -15,6 +15,7 @@ function createMockProvider(result: TextResult): AiProvider {
     name: 'mock',
     generateText: vi.fn().mockResolvedValue(result),
     generateImage: vi.fn().mockResolvedValue({ base64: '', costUnits: 0 }),
+    analyzeImage: vi.fn().mockResolvedValue({ text: '' }),
   }
 }
 
@@ -308,6 +309,7 @@ describe('TextHandler', () => {
           .fn()
           .mockRejectedValue(new Error('Rate limit exceeded')),
         generateImage: vi.fn().mockResolvedValue({ base64: '', costUnits: 0 }),
+        analyzeImage: vi.fn().mockResolvedValue({ text: '' }),
       }
       handler.setProvider('gemini', mockProvider)
 

@@ -11,11 +11,14 @@ import type {
   TextResult,
   ImageRequest,
   ImageResult,
+  ImageAnalysisRequest,
+  ImageAnalysisResult,
 } from '../types.js'
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta'
 const DEFAULT_TEXT_MODEL = 'gemini-1.5-pro'
 const DEFAULT_IMAGE_MODEL = 'imagen-3.0-generate-002'
+const DEFAULT_VISION_MODEL = 'gemini-2.0-flash'
 
 export class GeminiProvider implements AiProvider {
   readonly name = 'gemini'
@@ -115,6 +118,41 @@ export class GeminiProvider implements AiProvider {
     }
   }
 
+  /**
+   * R-RIMG-21: Analyze image using Gemini Vision API (generateContent with multimodal input).
+   */
+  async analyzeImage(request: ImageAnalysisRequest): Promise<ImageAnalysisResult> {
+    const model = request.model ?? DEFAULT_VISION_MODEL
+    const url = `${GEMINI_API_BASE}/models/${model}:generateContent?key=${this.apiKey}`
+
+    // R-RIMG-23: Send image as inlineData part alongside text prompt part
+    const mimeType = request.mimeType ?? 'image/png'
+    const body: GeminiVisionRequestBody = {
+      contents: [{
+        parts: [
+          { text: request.prompt },
+          { inlineData: { mimeType, data: request.image } },
+        ],
+      }],
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText)
+    }
+
+    const data = (await response.json()) as GeminiTextResponse
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+
+    return { text }
+  }
+
   private mapSizeToAspectRatio(
     size: ImageRequest['size'],
   ): '1:1' | '16:9' | '9:16' {
@@ -171,5 +209,16 @@ interface ImagenRequestBody {
 interface ImagenResponse {
   predictions?: Array<{
     bytesBase64Encoded?: string
+  }>
+}
+
+// Gemini Vision API Types
+
+interface GeminiVisionRequestBody {
+  contents: Array<{
+    parts: Array<
+      | { text: string }
+      | { inlineData: { mimeType: string; data: string } }
+    >
   }>
 }

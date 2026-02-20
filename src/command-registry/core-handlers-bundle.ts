@@ -20,6 +20,7 @@ import {
   ConfirmHandler,
   GridHandler,
   ImageHandler,
+  ReverseImageHandler,
   TextHandler,
 } from '../core-handlers/index.js'
 
@@ -62,6 +63,8 @@ export class CoreHandlersBundle implements RegistryBundle<CommandHandler<any>> {
       // AI generation handlers (R-AI-03)
       new TextHandler(),
       new ImageHandler(),
+      // AI prompt engineering handlers (R-RIMG-82)
+      new ReverseImageHandler(),
     ]
 
     // Register each handler by its id

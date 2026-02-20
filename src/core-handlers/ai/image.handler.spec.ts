@@ -15,6 +15,7 @@ function createMockProvider(result: ImageResult): AiProvider {
     name: 'mock',
     generateText: vi.fn().mockResolvedValue({ text: '', tokensUsed: 0 }),
     generateImage: vi.fn().mockResolvedValue(result),
+    analyzeImage: vi.fn().mockResolvedValue({ text: '' }),
   }
 }
 
@@ -322,6 +323,7 @@ describe('ImageHandler', () => {
         generateImage: vi
           .fn()
           .mockRejectedValue(new Error('Content policy violation')),
+        analyzeImage: vi.fn().mockResolvedValue({ text: '' }),
       }
       handler.setProvider('gemini', mockProvider)
 

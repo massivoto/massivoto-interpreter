@@ -396,4 +396,218 @@ describe('GeminiProvider', () => {
       ).rejects.toThrow('Content policy violation')
     })
   })
+
+  describe('R-RIMG-21: image analysis via Gemini Vision API', () => {
+    it('should call generateContent endpoint with vision model', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: 'A prompt describing the image' }],
+                },
+              },
+            ],
+          }),
+      })
+      global.fetch = mockFetch
+
+      const provider = new GeminiProvider('test-key')
+      await provider.analyzeImage({
+        image: 'iVBORw0KGgoAAAANSUhEUg==',
+        prompt: 'Describe this image',
+      })
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('generateContent'),
+        expect.any(Object),
+      )
+    })
+
+    it('should use gemini-2.0-flash as default vision model', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: 'Analysis result' }],
+                },
+              },
+            ],
+          }),
+      })
+      global.fetch = mockFetch
+
+      const provider = new GeminiProvider('test-key')
+      await provider.analyzeImage({
+        image: 'iVBORw0KGgoAAAANSUhEUg==',
+        prompt: 'Analyze this',
+      })
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('gemini-2.0-flash'),
+        expect.any(Object),
+      )
+    })
+
+    it('should use specified model when provided', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: 'Analysis result' }],
+                },
+              },
+            ],
+          }),
+      })
+      global.fetch = mockFetch
+
+      const provider = new GeminiProvider('test-key')
+      await provider.analyzeImage({
+        image: 'iVBORw0KGgoAAAANSUhEUg==',
+        prompt: 'Analyze this',
+        model: 'gemini-2.0-flash-lite',
+      })
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('gemini-2.0-flash-lite'),
+        expect.any(Object),
+      )
+    })
+
+    it('should send image as inlineData with image/png mimeType', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: 'Analysis' }],
+                },
+              },
+            ],
+          }),
+      })
+      global.fetch = mockFetch
+
+      const provider = new GeminiProvider('test-key')
+      await provider.analyzeImage({
+        image: 'base64ImageData',
+        prompt: 'Describe',
+      })
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body)
+      const parts = callBody.contents[0].parts
+      expect(parts[1]).toEqual({
+        inlineData: { mimeType: 'image/png', data: 'base64ImageData' },
+      })
+    })
+
+    it('should send text prompt as the first part', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: 'Analysis' }],
+                },
+              },
+            ],
+          }),
+      })
+      global.fetch = mockFetch
+
+      const provider = new GeminiProvider('test-key')
+      await provider.analyzeImage({
+        image: 'base64data',
+        prompt: 'Reverse-engineer this image',
+      })
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body)
+      const parts = callBody.contents[0].parts
+      expect(parts[0]).toEqual({ text: 'Reverse-engineer this image' })
+    })
+
+    it('should return text from the response', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: 'A cinematic photograph with warm tones' }],
+                },
+              },
+            ],
+          }),
+      })
+      global.fetch = mockFetch
+
+      const provider = new GeminiProvider('test-key')
+      const result = await provider.analyzeImage({
+        image: 'someBase64',
+        prompt: 'Analyze',
+      })
+
+      expect(result.text).toBe('A cinematic photograph with warm tones')
+    })
+
+    it('should throw error on API failure', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        text: () => Promise.resolve('Invalid image data'),
+      })
+      global.fetch = mockFetch
+
+      const provider = new GeminiProvider('test-key')
+
+      await expect(
+        provider.analyzeImage({
+          image: 'badData',
+          prompt: 'Analyze',
+        }),
+      ).rejects.toThrow('Invalid image data')
+    })
+
+    it('should include API key in request', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: 'Result' }],
+                },
+              },
+            ],
+          }),
+      })
+      global.fetch = mockFetch
+
+      const provider = new GeminiProvider('my-vision-key')
+      await provider.analyzeImage({
+        image: 'data',
+        prompt: 'Analyze',
+      })
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('key=my-vision-key'),
+        expect.any(Object),
+      )
+    })
+  })
 })

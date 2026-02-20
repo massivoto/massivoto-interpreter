@@ -167,8 +167,7 @@ export class CoreInterpreter implements Interpreter {
     context: ExecutionContext,
   ): Promise<StatementResult> {
     const start = nowTs()
-    const { package: pkg, name } = instruction.action
-    const id = `@${pkg}/${name}`
+    const id = `@${instruction.action.path.join('/')}`
     const handler = await this.registry.resolve(id)
     if (!handler) throw new Error(`Command not found: ${id}`)
 
