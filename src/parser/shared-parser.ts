@@ -18,6 +18,8 @@ const reservedWords = [
   // Reserved arguments
   'output',
   'if',
+  'retry',
+  'collect',
   // Control flow (future)
   'for',
   'forEach',

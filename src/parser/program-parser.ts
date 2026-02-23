@@ -88,13 +88,8 @@ function extractBlockMeta(
     forEach = instruction.forEach
   }
 
-  // R-FE-82: Validate forEach and if are mutually exclusive
-  if (condition && forEach) {
-    throw new Error(
-      `Block cannot have both forEach= and if= on the same @block/begin (line ${lineNumber})`,
-    )
-  }
-
+  // R-FILTER-21: forEach and if can coexist (filter pattern).
+  // if= becomes a per-item filter evaluated inside the forEach loop.
   return { name, condition, forEach }
 }
 

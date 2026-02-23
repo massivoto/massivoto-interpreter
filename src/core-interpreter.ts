@@ -31,6 +31,25 @@ import {
 import { ExpressionEvaluator } from './evaluator/index.js'
 
 /**
+ * R-FILTER-01: Canonical precedence chain for reserved arguments.
+ *
+ *   forEach -> if -> retry -> execute -> output/collect
+ *
+ * R-FILTER-02: Position on the line does NOT affect precedence.
+ * The parser collects reserved args by type, not position.
+ *
+ * R-FILTER-03: On blocks, forEach and if apply to the block body.
+ * retry, output, and collect are valid on instructions only (not blocks).
+ */
+export const RESERVED_ARG_PRECEDENCE = [
+  'forEach',
+  'if',
+  'retry',
+  'execute',
+  'output/collect',
+] as const
+
+/**
  * Flow control result from a statement execution.
  * Used to signal goto, exit, or return to the program loop.
  */
@@ -183,10 +202,10 @@ export class CoreInterpreter implements Interpreter {
     }
 
     const hasOutput = !!(instruction.output && result.success)
+    const hasCollect = !!(instruction.collect && result.success)
     const outputKey = instruction.output?.value
 
-    if (hasOutput) {
-      assertDefined(instruction.output)
+    if (hasOutput || hasCollect) {
       outcome.value = result.value
     }
 
@@ -197,10 +216,8 @@ export class CoreInterpreter implements Interpreter {
     if (outputKey && hasOutput) {
       const target = parseOutputTarget(outputKey)
       if (target.namespace === 'scope') {
-        // Write to scope chain (current scope only)
         write(target.key, outcome.value, returnedContext.scopeChain)
       } else {
-        // Write to data namespace using lodash set for nested paths
         lodashSet(returnedContext.data, target.key, outcome.value)
       }
     }
@@ -216,13 +233,47 @@ export class CoreInterpreter implements Interpreter {
       fatalError: result.fatalError,
       cost: result.cost,
       output: outputKey,
-      value: hasOutput ? outcome.value : undefined,
+      value: (hasOutput || hasCollect) ? outcome.value : undefined,
     }
 
     // Determine flow control based on command result
     const flow = this.determineFlowControl(id, result.value)
 
     return { context: returnedContext, flow, log, cost: result.cost }
+  }
+
+  /**
+   * R-FILTER-81: Execute an instruction with retry support.
+   * If instruction.retry is set, wraps execution in a retry loop.
+   * retry=0 means no retry (1 attempt), retry=N means N retries (N+1 attempts).
+   */
+  async executeWithRetry(
+    instruction: InstructionNode,
+    context: ExecutionContext,
+  ): Promise<StatementResult> {
+    if (!instruction.retry) {
+      return this.execute(instruction, context)
+    }
+
+    const retryCount = await this.evaluator.evaluate(
+      instruction.retry,
+      context,
+    )
+    const maxRetries = typeof retryCount === 'number' ? retryCount : 0
+
+    let lastError: Error | undefined
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await this.execute(instruction, context)
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+        if (attempt === maxRetries) {
+          throw lastError
+        }
+      }
+    }
+
+    throw lastError!
   }
 
   /**
@@ -357,6 +408,28 @@ export class CoreInterpreter implements Interpreter {
       const statement = statements[i]
 
       if (statement.type === 'instruction') {
+        // R-FILTER-43: instruction-level forEach
+        if (statement.forEach) {
+          const forEachResult = await this.executeForEachInstruction(
+            statement,
+            currentContext,
+          )
+          currentContext = forEachResult.context
+          actions.push(...forEachResult.actions)
+          totalCost += forEachResult.cost
+
+          if (forEachResult.flow.type !== 'continue') {
+            return {
+              context: currentContext,
+              flow: forEachResult.flow,
+              actions,
+              cost: totalCost,
+            }
+          }
+          i++
+          continue
+        }
+
         // R-BLK-22: For InstructionNode: check condition, execute, handle flow control
         if (statement.condition) {
           const conditionValue = await this.evaluator.evaluate(
@@ -370,13 +443,24 @@ export class CoreInterpreter implements Interpreter {
           }
         }
 
-        const result = await this.execute(statement, currentContext)
+        const result = await this.executeWithRetry(statement, currentContext)
         currentContext = result.context
 
         if (result.log) {
           actions.push(result.log)
         }
         totalCost += result.cost
+
+        // R-FILTER-101: collect without forEach wraps single result in array
+        if (statement.collect && result.log?.value !== undefined) {
+          const collectKey = statement.collect.value
+          const target = parseOutputTarget(collectKey)
+          if (target.namespace === 'scope') {
+            write(target.key, [result.log.value], currentContext.scopeChain)
+          } else {
+            lodashSet(currentContext.data, target.key, [result.log.value])
+          }
+        }
 
         // Handle flow control
         if (result.flow.type === 'goto') {
@@ -520,7 +604,8 @@ export class CoreInterpreter implements Interpreter {
     labelIndex: EnhancedLabelIndex,
     blockPath: number[],
   ): Promise<StatementListResult> {
-    // Check for forEach - takes precedence over condition (mutually exclusive)
+    // R-FILTER-41: When block has BOTH forEach AND condition,
+    // pass condition into the forEach execution path for per-item filtering.
     if (block.forEach) {
       return this.executeForEachWithStatementList(
         block,
@@ -531,7 +616,7 @@ export class CoreInterpreter implements Interpreter {
       )
     }
 
-    // Check condition if present
+    // Check condition if present (block with if= only, no forEach)
     if (block.condition) {
       const conditionValue = await this.evaluator.evaluate(
         block.condition,
@@ -624,6 +709,18 @@ export class CoreInterpreter implements Interpreter {
       // Inject the iterator variable
       write(iteratorName, item, currentContext.scopeChain)
 
+      // R-FILTER-42: per-item condition evaluation (filter pattern)
+      if (block.condition) {
+        const conditionValue = await this.evaluator.evaluate(
+          block.condition,
+          currentContext,
+        )
+        if (!conditionValue) {
+          currentContext.scopeChain = popScope(currentContext.scopeChain)
+          continue
+        }
+      }
+
       // Execute all statements in the block body using executeStatementList
       const result = await this.executeStatementList(
         block.body,
@@ -648,6 +745,123 @@ export class CoreInterpreter implements Interpreter {
           actions,
           cost: totalCost,
         }
+      }
+    }
+
+    return {
+      context: currentContext,
+      flow: { type: 'continue' },
+      actions,
+      cost: totalCost,
+    }
+  }
+
+  /**
+   * R-FILTER-43: Execute a single instruction with forEach (and optional if filter).
+   * Handles the precedence chain: forEach -> if -> execute -> output
+   */
+  private async executeForEachInstruction(
+    instruction: InstructionNode,
+    context: ExecutionContext,
+  ): Promise<StatementListResult> {
+    const forEach = instruction.forEach!
+    const actions: ActionLog[] = []
+    let totalCost = 0
+
+    const iterable = await this.evaluator.evaluate(forEach.iterable, context)
+
+    if (!Array.isArray(iterable)) {
+      const type = iterable === null ? 'null' : typeof iterable
+      throw new Error(`Cannot iterate over ${type}. forEach requires an array.`)
+    }
+
+    const collectKey = instruction.collect?.value
+    const collected: unknown[] = []
+
+    if (iterable.length === 0) {
+      // R-FILTER-102: empty forEach with collect produces empty array
+      let resultContext = context
+      if (collectKey) {
+        resultContext = cloneExecutionContext(context)
+        const target = parseOutputTarget(collectKey)
+        if (target.namespace === 'scope') {
+          write(target.key, [], resultContext.scopeChain)
+        } else {
+          lodashSet(resultContext.data, target.key, [])
+        }
+      }
+      return {
+        context: resultContext,
+        flow: { type: 'continue' },
+        actions: [],
+        cost: 0,
+      }
+    }
+
+    const iteratorName = forEach.iterator.value
+    const length = iterable.length
+    let currentContext = context
+
+    for (let index = 0; index < length; index++) {
+      const item = iterable[index]
+
+      currentContext = cloneExecutionContext(currentContext)
+      currentContext.scopeChain = pushScope(currentContext.scopeChain)
+
+      // Inject system variables (R-FILTER-44: count ALL items)
+      write('_index', index, currentContext.scopeChain)
+      write('_count', index + 1, currentContext.scopeChain)
+      write('_length', length, currentContext.scopeChain)
+      write('_first', index === 0, currentContext.scopeChain)
+      write('_last', index === length - 1, currentContext.scopeChain)
+      write('_odd', (index + 1) % 2 === 1, currentContext.scopeChain)
+      write('_even', (index + 1) % 2 === 0, currentContext.scopeChain)
+
+      write(iteratorName, item, currentContext.scopeChain)
+
+      // R-FILTER-43: per-item if filtering
+      if (instruction.condition) {
+        const conditionValue = await this.evaluator.evaluate(
+          instruction.condition,
+          currentContext,
+        )
+        if (!conditionValue) {
+          currentContext.scopeChain = popScope(currentContext.scopeChain)
+          continue
+        }
+      }
+
+      const result = await this.executeWithRetry(instruction, currentContext)
+      currentContext = result.context
+
+      if (result.log) {
+        actions.push(result.log)
+        // R-FILTER-102: accumulate result value for collect
+        if (collectKey && result.log.value !== undefined) {
+          collected.push(result.log.value)
+        }
+      }
+      totalCost += result.cost
+
+      currentContext.scopeChain = popScope(currentContext.scopeChain)
+
+      if (result.flow.type !== 'continue') {
+        return {
+          context: currentContext,
+          flow: result.flow,
+          actions,
+          cost: totalCost,
+        }
+      }
+    }
+
+    // R-FILTER-102: write collected results to context
+    if (collectKey) {
+      const target = parseOutputTarget(collectKey)
+      if (target.namespace === 'scope') {
+        write(target.key, collected, currentContext.scopeChain)
+      } else {
+        lodashSet(currentContext.data, target.key, collected)
       }
     }
 

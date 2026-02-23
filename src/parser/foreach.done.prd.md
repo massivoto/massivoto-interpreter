@@ -272,7 +272,7 @@ ForEach **requires** the scope chain from [variable-scope.prd.md](../evaluator/v
 
 ## Open Questions
 
-- [x] Can forEach and if coexist on same block? -> **No**, use nested blocks
+- [x] Can forEach and if coexist on same block? -> **Yes (filter pattern)** - see [reserved-args-precedence.wip.prd.md](./filter-pattern/reserved-args-precedence.wip.prd.md)
 - [x] What happens with empty collection? -> **0 iterations, no error**
 - [x] What happens with non-array? -> **Runtime error**
 - [x] Index variable syntax? -> **Implicit `_index`** (system variable)

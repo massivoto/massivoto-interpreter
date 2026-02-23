@@ -68,25 +68,47 @@ describe('ForEach Block Integration', () => {
     })
   })
 
-  describe('R-FE-82: forEach and if are mutually exclusive', () => {
-    it('rejects block with both forEach and if', () => {
-      const source = `@block/begin forEach=users -> user if=isActive
-@utils/log message=user
+  describe('R-FILTER-21/22: forEach and if coexist (filter pattern)', () => {
+    it('accepts block with both forEach and if (filter pattern)', () => {
+      const source = `@block/begin forEach=users -> user if={user.active}
+@utils/log message={user.name}
 @block/end`
+      const result = parser.val(source)
 
-      expect(() => parser.val(source)).toThrow(
-        /Block cannot have both forEach= and if=/,
-      )
+      expect(result.body).toHaveLength(1)
+      const block = result.body[0] as BlockNode
+      expect(block.type).toBe('block')
+      expect(block.forEach).toBeDefined()
+      expect(block.condition).toBeDefined()
+
+      const forEach = block.forEach as ForEachArgNode
+      expect(forEach.iterable).toEqual({ type: 'identifier', value: 'users' })
+      expect(forEach.iterator).toEqual({ type: 'single-string', value: 'user' })
+      expect(block.condition?.type).toBe('member')
     })
 
-    it('rejects block with if before forEach', () => {
+    it('accepts block with if before forEach', () => {
       const source = `@block/begin if=isActive forEach=users -> user
 @utils/log message=user
 @block/end`
+      const result = parser.val(source)
 
-      expect(() => parser.val(source)).toThrow(
-        /Block cannot have both forEach= and if=/,
-      )
+      const block = result.body[0] as BlockNode
+      expect(block.forEach).toBeDefined()
+      expect(block.condition).toBeDefined()
+      expect(block.condition).toEqual({ type: 'identifier', value: 'isActive' })
+    })
+
+    it('AC-FP-02: block with forEach and expression condition', () => {
+      const source = `@block/begin forEach=drivers -> driver if={driver.points > 50}
+@utils/log message={driver.name}
+@block/end`
+      const result = parser.val(source)
+
+      const block = result.body[0] as BlockNode
+      expect(block.forEach).toBeDefined()
+      expect(block.condition).toBeDefined()
+      expect(block.condition?.type).toBe('binary')
     })
   })
 

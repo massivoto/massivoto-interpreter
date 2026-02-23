@@ -341,4 +341,124 @@ describe('Reserved Arguments', () => {
       })
     })
   })
+
+  describe('retry=expression (R-FILTER-61, R-FILTER-64, R-FILTER-66)', () => {
+    it('AC-FP-13: parses retry=3 as literal number expression', () => {
+      const parsing = parse('@ai/generateImage prompt="F1 car" retry=3')
+      expect(parsing.isAccepted()).toBe(true)
+      const instr = parsing.value
+
+      expect(instr.retry).toBeDefined()
+      expect(instr.retry).toEqual({ type: 'literal-number', value: 3 })
+    })
+
+    it('parses retry=0 (no retry)', () => {
+      const parsing = parse('@ai/generateImage prompt="F1 car" retry=0')
+      expect(parsing.isAccepted()).toBe(true)
+      expect(parsing.value.retry).toEqual({ type: 'literal-number', value: 0 })
+    })
+
+    it('parses retry={maxRetries} as expression', () => {
+      const parsing = parse(
+        '@ai/generateImage prompt="F1 car" retry={maxRetries}',
+      )
+      expect(parsing.isAccepted()).toBe(true)
+      expect(parsing.value.retry).toBeDefined()
+      expect(parsing.value.retry?.type).toBe('identifier')
+      expect((parsing.value.retry as any).value).toBe('maxRetries')
+    })
+
+    it('parses retry as only arg', () => {
+      const parsing = parse('@ai/generateImage retry=2')
+      expect(parsing.isAccepted()).toBe(true)
+      expect(parsing.value.retry).toEqual({ type: 'literal-number', value: 2 })
+      expect(parsing.value.args.length).toBe(0)
+    })
+
+    it('retry does not appear in regular args', () => {
+      const parsing = parse('@ai/generateImage prompt="F1 car" retry=3')
+      expect(parsing.isAccepted()).toBe(true)
+      expect(
+        parsing.value.args.find((a: any) => a.name.value === 'retry'),
+      ).toBeUndefined()
+    })
+  })
+
+  describe('collect=identifier (R-FILTER-62, R-FILTER-64, R-FILTER-66)', () => {
+    it('AC-FP-14: parses collect=myResults as identifier', () => {
+      const parsing = parse('@ai/describe prompt="F1" collect=myResults')
+      expect(parsing.isAccepted()).toBe(true)
+      const instr = parsing.value
+
+      expect(instr.collect).toBeDefined()
+      expect(instr.collect).toEqual({ type: 'identifier', value: 'myResults' })
+    })
+
+    it('parses collect=images', () => {
+      const parsing = parse(
+        '@ai/generateImage prompt="F1 car" collect=images',
+      )
+      expect(parsing.isAccepted()).toBe(true)
+      expect(parsing.value.collect).toEqual({
+        type: 'identifier',
+        value: 'images',
+      })
+    })
+
+    it('rejects collect=123 (must be identifier)', () => {
+      const parsing = parseStrict('@ai/describe collect=123')
+      expect(parsing.isAccepted()).toBe(false)
+    })
+
+    it('rejects collect="string" (must be identifier)', () => {
+      const parsing = parseStrict('@ai/describe collect="results"')
+      expect(parsing.isAccepted()).toBe(false)
+    })
+
+    it('collect does not appear in regular args', () => {
+      const parsing = parse('@ai/describe prompt="F1" collect=results')
+      expect(parsing.isAccepted()).toBe(true)
+      expect(
+        parsing.value.args.find((a: any) => a.name.value === 'collect'),
+      ).toBeUndefined()
+    })
+  })
+
+  describe('R-FILTER-103: collect and output mutually exclusive', () => {
+    it('AC-FP-11: rejects instruction with both output and collect', () => {
+      const source = '@ai/describe prompt="F1" output=result collect=results'
+      expect(() => {
+        const parsing = parse(source)
+        if (!parsing.isAccepted()) throw new Error('Parse failed')
+      }).toThrow(/Cannot use both output= and collect=/)
+    })
+  })
+
+  describe('all reserved args combined (R-FILTER-02)', () => {
+    it('AC-FP-12: parses all four reserved args regardless of order', () => {
+      const parsing = parse(
+        '@race/run retry=3 if={x} collect=r forEach=items -> item',
+      )
+      expect(parsing.isAccepted()).toBe(true)
+      const instr = parsing.value
+
+      expect(instr.retry).toEqual({ type: 'literal-number', value: 3 })
+      expect(instr.condition).toBeDefined()
+      expect(instr.collect).toEqual({ type: 'identifier', value: 'r' })
+      expect(instr.forEach).toBeDefined()
+      expect(instr.forEach?.iterator.value).toBe('item')
+    })
+
+    it('parses retry and collect with forEach and output', () => {
+      const parsing = parse(
+        '@race/run forEach=drivers -> driver retry=2 output=result',
+      )
+      expect(parsing.isAccepted()).toBe(true)
+      const instr = parsing.value
+
+      expect(instr.forEach).toBeDefined()
+      expect(instr.retry).toEqual({ type: 'literal-number', value: 2 })
+      expect(instr.output).toEqual({ type: 'identifier', value: 'result' })
+    })
+  })
 })

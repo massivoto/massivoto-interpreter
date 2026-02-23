@@ -16,6 +16,7 @@ import {
 import {
   ArgumentNode,
   ActionNode,
+  CollectArgNode,
   ExpressionNode,
   ForEachArgNode,
   IdentifierNode,
@@ -24,6 +25,7 @@ import {
   LabelArgNode,
   MapperExpressionNode,
   OutputArgNode,
+  RetryArgNode,
   SingleStringNode,
 } from './ast.js'
 import { buildActionParser } from './action/action-parser.js'
@@ -35,6 +37,8 @@ export interface InstructionTokens extends ArgTokens {
   IF_KEY: SingleParser<'if='>
   FOREACH_KEY: SingleParser<'forEach='>
   LABEL_KEY: SingleParser<'label='>
+  RETRY_KEY: SingleParser<'retry='>
+  COLLECT_KEY: SingleParser<'collect='>
 }
 
 function getInstructionTokens(genlex: IGenLex): InstructionTokens {
@@ -59,6 +63,12 @@ function getInstructionTokens(genlex: IGenLex): InstructionTokens {
     LABEL_KEY: genlex
       .tokenize(C.string('label='), 'LABEL_KEY', 500)
       .map(leanToken) as SingleParser<'label='>,
+    RETRY_KEY: genlex
+      .tokenize(C.string('retry='), 'RETRY_KEY', 500)
+      .map(leanToken) as SingleParser<'retry='>,
+    COLLECT_KEY: genlex
+      .tokenize(C.string('collect='), 'COLLECT_KEY', 500)
+      .map(leanToken) as SingleParser<'collect='>,
   }
 }
 
@@ -85,6 +95,8 @@ export function createInstructionGrammar(
     IF_KEY,
     FOREACH_KEY,
     LABEL_KEY,
+    RETRY_KEY,
+    COLLECT_KEY,
     IDENTIFIER,
     DOT,
     STRING,
@@ -162,10 +174,28 @@ export function createInstructionGrammar(
       }
     })
 
+  // retry=expression - RETRY_KEY is dropped, expression becomes the retry count
+  const retryArg: SingleParser<RetryArgNode> = RETRY_KEY.drop()
+    .then(expression)
+    .map((tuple) => ({
+      type: 'retry-arg' as const,
+      count: tuple.single() as ExpressionNode,
+    }))
+
+  // collect=identifier - COLLECT_KEY is dropped, identifier becomes the target
+  const collectArg: SingleParser<CollectArgNode> = COLLECT_KEY.drop()
+    .then(dottedPath)
+    .map((tuple) => ({
+      type: 'collect-arg' as const,
+      target: tuple.single() as IdentifierNode,
+    }))
+
   // Combined reserved arg parser with backtracking
   const reservedArg = F.try(outputArg)
     .or(F.try(ifArg))
     .or(F.try(forEachArg))
+    .or(F.try(retryArg))
+    .or(F.try(collectArg))
     .or(labelArg)
 
   // Any arg: try reserved first, then regular
@@ -179,6 +209,8 @@ export function createInstructionGrammar(
       | IfArgNode
       | ForEachArgNode
       | LabelArgNode
+      | RetryArgNode
+      | CollectArgNode
     )[]
 
     // Separate reserved args from regular args
@@ -187,6 +219,8 @@ export function createInstructionGrammar(
     let condition: ExpressionNode | undefined
     let forEach: ForEachArgNode | undefined
     let label: string | undefined
+    let retry: ExpressionNode | undefined
+    let collect: IdentifierNode | undefined
 
     for (const arg of allArgs) {
       if (arg.type === 'output-arg') {
@@ -197,9 +231,20 @@ export function createInstructionGrammar(
         forEach = arg
       } else if (arg.type === 'label-arg') {
         label = arg.name
+      } else if (arg.type === 'retry-arg') {
+        retry = arg.count
+      } else if (arg.type === 'collect-arg') {
+        collect = arg.target
       } else {
         regularArgs.push(arg)
       }
+    }
+
+    // R-FILTER-103: collect and output are mutually exclusive
+    if (output && collect) {
+      throw new Error(
+        'Cannot use both output= and collect= on the same instruction',
+      )
     }
 
     const instructionNode: InstructionNode = {
@@ -210,6 +255,8 @@ export function createInstructionGrammar(
       condition,
       forEach,
       label,
+      retry,
+      collect,
     }
     return instructionNode
   })

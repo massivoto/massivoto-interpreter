@@ -172,6 +172,24 @@ export interface ForEachArgNode {
 }
 
 /**
+ * Reserved argument: retry=expression
+ * Retries the command execution up to N times on failure. (R-FILTER-61)
+ */
+export interface RetryArgNode {
+  type: 'retry-arg'
+  count: ExpressionNode
+}
+
+/**
+ * Reserved argument: collect=identifier
+ * Accumulates results into an array variable. (R-FILTER-62)
+ */
+export interface CollectArgNode {
+  type: 'collect-arg'
+  target: IdentifierNode
+}
+
+/**
  * Union of all reserved argument types.
  */
 export type ReservedArgNode =
@@ -179,6 +197,8 @@ export type ReservedArgNode =
   | IfArgNode
   | ForEachArgNode
   | LabelArgNode
+  | RetryArgNode
+  | CollectArgNode
 
 /**
  * ActionNode represents the @package/name identifier in OTO source.
@@ -215,6 +235,8 @@ export interface InstructionNode {
   condition?: ExpressionNode // from if=expression
   forEach?: ForEachArgNode // from forEach=iterable -> iterator (used by @block/begin)
   label?: string // from label="name" - jump target for @flow/goto
+  retry?: ExpressionNode // from retry=expression (R-FILTER-63)
+  collect?: IdentifierNode // from collect=identifier (R-FILTER-63)
 }
 
 export type DslAstNode =
