@@ -192,9 +192,9 @@ ForEach **requires** the scope chain from [variable-scope.prd.md](../evaluator/v
 - ✅ R-FE-81: Block parser extracts `forEach=` from `@block/begin` arguments
   - Populates `BlockNode.forEach` field
 
-- ✅ R-FE-82: Validation: `forEach=` and `if=` are mutually exclusive on same block
-  - Error: "Block cannot have both forEach= and if= arguments"
-  - Rationale: Use nested blocks for conditional forEach
+- ⚠️ R-FE-82: **SUPERSEDED** by filter pattern ([reserved-args-precedence.wip.prd.md](./filter-pattern/reserved-args-precedence.wip.prd.md))
+  - forEach= and if= now coexist: if= is evaluated per-item inside the forEach loop
+  - Nested blocks remain an option but are no longer required
 
 ### Interpreter
 
@@ -293,7 +293,7 @@ ForEach **requires** the scope chain from [variable-scope.prd.md](../evaluator/v
 - [x] AC-FE-01: Given `@block/begin forEach=users -> user`, when parsed, then `BlockNode.forEach` is `{ iterable: Identifier(users), iterator: SingleString(user) }`
 - [x] AC-FE-02: Given `@block/begin forEach={users|filter:active} -> user`, when parsed, then `forEach.iterable` is `PipeExpressionNode`
 - [x] AC-FE-03: Given `@block/begin forEach=users` (no arrow), when parsed, then parser rejects with "forEach requires 'collection -> variable' syntax"
-- [x] AC-FE-04: Given `@block/begin forEach=users -> user if=cond`, when parsed, then parser rejects with "Block cannot have both forEach= and if="
+- [x] AC-FE-04: **SUPERSEDED** - forEach= and if= now coexist per filter pattern. See [reserved-args-precedence.wip.prd.md](./filter-pattern/reserved-args-precedence.wip.prd.md)
 
 **System Variables:**
 - [x] AC-FE-05: Given forEach over 3-element array, when `_index` accessed, then values are 0, 1, 2

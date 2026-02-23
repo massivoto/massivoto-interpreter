@@ -114,6 +114,7 @@ The fix requires a hybrid approach: statement-based execution that respects AST 
 
 - [x] What happens on goto into nested block? -> Undefined behavior, skip block setup (document as limitation)
 - [x] Should we support break/continue in forEach? -> Out of scope for this PRD
+- [x] Can forEach and if coexist on the same block? -> **Yes**, implemented via the filter pattern. `if=` is evaluated per-item inside the `forEach` loop. See [reserved-args-precedence.wip.prd.md](../parser/filter-pattern/reserved-args-precedence.wip.prd.md)
 
 ## Acceptance Criteria
 

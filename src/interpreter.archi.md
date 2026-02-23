@@ -219,20 +219,32 @@ Interpreter uses:    StatementResult (internal aggregation)
 
 
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                              FOREACH EXECUTION                                   │
+│                     FOREACH EXECUTION (with filter pattern)                       │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                  │
-│  forEach={users -> user}:                                                       │
+│  Precedence: forEach → if → retry → execute → output/collect                    │
 │                                                                                  │
+│  forEach={users -> user} if={user.active} retry=3 collect=results:              │
+│                                                                                  │
+│  results = []                                                                   │
 │  for each item in users:                                                        │
 │    ┌────────────────────────────────────────────────────────────────────────┐   │
 │    │  1. pushScope() ─► create child scope                                  │   │
-│    │  2. Inject system variables:                                           │   │
+│    │  2. Inject system variables (count ALL items, not filtered):           │   │
 │    │     _index, _count, _length, _first, _last, _odd, _even               │   │
 │    │  3. Inject iterator: write(user, item)                                 │   │
-│    │  4. Execute block body                                                 │   │
-│    │  5. popScope() ─► discard iteration scope                              │   │
+│    │  4. if= check ─► evaluate condition in current scope                   │   │
+│    │     └─ if falsy: popScope(), continue (skip this item)                │   │
+│    │  5. retry= loop ─► wrap execute in retry(N) on failure                │   │
+│    │  6. Execute block body / instruction handler                           │   │
+│    │  7. collect= ─► append result to results array                        │   │
+│    │  8. popScope() ─► discard iteration scope                              │   │
 │    └────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+│  Notes:                                                                          │
+│  - if= without forEach acts as a standalone guard (skip entire instruction)     │
+│  - retry= applies per individual execution (each item gets own retry budget)    │
+│  - collect= and output= are mutually exclusive (instructions only)              │
 │                                                                                  │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
