@@ -98,7 +98,7 @@ describe('PipeRegistry', () => {
       await registry.reload()
 
       const keys = await registry.keys()
-      expect(keys).toHaveLength(11)
+      expect(keys).toHaveLength(12)
     })
 
     it('should return undefined for unloaded bundle items before reload()', async () => {
@@ -252,14 +252,14 @@ describe('PipeRegistry', () => {
 
       expect(keys).toContain('filter')
       expect(keys).toContain('map')
-      expect(keys).toHaveLength(11)
+      expect(keys).toHaveLength(12)
     })
 
     it('should have entries() method', async () => {
       const entries = await registry.entries()
 
       expect(entries).toBeInstanceOf(Map)
-      expect(entries.size).toBe(11)
+      expect(entries.size).toBe(12)
       expect(entries.get('filter')).toBeDefined()
     })
   })

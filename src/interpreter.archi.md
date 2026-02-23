@@ -97,7 +97,8 @@ Interpreter uses:    StatementResult (internal aggregation)
 │  │  evaluateBinary()    ─► ==, !=, <, <=, >, >=, +, -, *, /, %              │  │
 │  │  evaluateLogical()   ─► && (short-circuit), || (short-circuit)           │  │
 │  │  evaluatePipe()      ─► {input | pipe:arg | ...}                         │
-│  (file/glob literals  ─► ~/path parsed as literal-file / literal-glob)    │  │
+│  │  evaluateFileLiteral()  ─► literal-file → FileReference                │  │
+│  │  evaluateGlobLiteral()  ─► literal-glob → FileReference[] (fast-glob)  │  │
 │  └──────────────────────────────────────────────────────────────────────────┘  │
 │                                    │                                            │
 │                                    ▼                                            │
@@ -280,6 +281,38 @@ Interpreter uses:    StatementResult (internal aggregation)
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │  current: Record<string, any>   // variables in this scope                      │
 │  parent?: ScopeChain            // link to outer scope                          │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+## File and Glob Evaluation
+
+The expression evaluator handles file path literals (`~/path`) and glob patterns (`~/pattern/*.ext`) as first-class expression types.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                        FILE / GLOB EVALUATION                                    │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  literal-file (~/images/hero.png):                                              │
+│  ┌────────────────────────────────────────────────────────────────────────────┐ │
+│  │  1. Strip ~/ prefix → "images/hero.png"                                    │ │
+│  │  2. Resolve against context.fileSystem.projectRoot                         │ │
+│  │  3. Security check: absolutePath.startsWith(projectRoot)                   │ │
+│  │  4. Return FileReference { type:'file-ref', relativePath, absolutePath }   │ │
+│  └────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                  │
+│  literal-glob (~/images/races/*.jpg):                                           │
+│  ┌────────────────────────────────────────────────────────────────────────────┐ │
+│  │  1. Strip ~/ prefix → "images/races/*.jpg"                                 │ │
+│  │  2. Expand via fast-glob with cwd = projectRoot                            │ │
+│  │  3. For each match: create FileReference (same as literal-file)            │ │
+│  │  4. Sort alphabetically, return FileReference[]                            │ │
+│  │  5. Empty match → [] (not an error)                                        │ │
+│  └────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                  │
+│  Requires: ExecutionContext.fileSystem.projectRoot must be set.                 │
+│  Throws EvaluationError if projectRoot is missing or path escapes projectRoot. │
+│                                                                                  │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 

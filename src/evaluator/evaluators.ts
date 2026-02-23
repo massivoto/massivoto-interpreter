@@ -1,4 +1,6 @@
 // Expression Evaluator
+import path from 'path'
+import fg from 'fast-glob'
 import {
   ExpressionNode,
   MemberExpressionNode,
@@ -7,10 +9,17 @@ import {
   LogicalExpressionNode,
   ArrayLiteralNode,
   IdentifierNode,
+  FileLiteralNode,
+  GlobLiteralNode,
 } from '../parser/ast.js'
 import { PipeExpressionNode } from '../parser/args-details/pipe-parser/pipe-parser.js'
 import { PipeRegistry } from '../pipe-registry/index.js'
-import { ExecutionContext, lookup } from '@massivoto/kit'
+import {
+  ExecutionContext,
+  lookup,
+  resolveFilePath,
+  FileReference,
+} from '@massivoto/kit'
 
 /**
  * Custom error class for evaluation failures.
@@ -60,6 +69,12 @@ export class ExpressionEvaluator {
 
       case 'literal-null':
         return null
+
+      case 'literal-file':
+        return this.evaluateFileLiteral(expr, context)
+
+      case 'literal-glob':
+        return this.evaluateGlobLiteral(expr, context)
 
       case 'member':
         return this.evaluateMember(expr, context)
@@ -338,5 +353,60 @@ export class ExpressionEvaluator {
     }
 
     return current
+  }
+
+  // R-FILE-21
+  private evaluateFileLiteral(
+    expr: FileLiteralNode,
+    context: ExecutionContext,
+  ): FileReference {
+    const projectRoot = this.getProjectRoot(expr, context)
+    const relativePath = this.stripTildePrefix(expr.value)
+    const absolutePath = resolveFilePath(relativePath, projectRoot)
+
+    return { type: 'file-ref', relativePath, absolutePath }
+  }
+
+  // R-FILE-22, R-FILE-23
+  private async evaluateGlobLiteral(
+    expr: GlobLiteralNode,
+    context: ExecutionContext,
+  ): Promise<FileReference[]> {
+    const projectRoot = this.getProjectRoot(expr, context)
+    const pattern = this.stripTildePrefix(expr.value)
+
+    const matches = await fg(pattern, {
+      cwd: projectRoot,
+      onlyFiles: true,
+      dot: false,
+    })
+
+    // Sort alphabetically for deterministic output
+    matches.sort()
+
+    return matches.map((relativePath) => ({
+      type: 'file-ref' as const,
+      relativePath: relativePath.replace(/\\/g, '/'),
+      absolutePath: path.resolve(projectRoot, relativePath),
+    }))
+  }
+
+  // R-FILE-24
+  private getProjectRoot(
+    expr: ExpressionNode,
+    context: ExecutionContext,
+  ): string {
+    if (!context.fileSystem?.projectRoot) {
+      throw new EvaluationError(
+        'File access requires a projectRoot. Configure it in the runner.',
+        (expr as any).type,
+        expr,
+      )
+    }
+    return context.fileSystem.projectRoot
+  }
+
+  private stripTildePrefix(value: string): string {
+    return value.startsWith('~/') ? value.slice(2) : value
   }
 }

@@ -17,9 +17,9 @@
 | Scope | Complete | - |
 | Requirements: Types | Complete | 4/4 |
 | Requirements: Registry | Complete | 4/4 |
-| Requirements: Core Pipes | Complete | 9/9 |
+| Requirements: Core Pipes | Complete | 10/10 |
 | Requirements: Error Handling | Complete | 3/3 |
-| Acceptance Criteria | Complete | 16/16 |
+| Acceptance Criteria | Complete | 18/18 |
 | **Overall** | **IMPLEMENTED** | **100%** |
 
 ## Parent PRD
@@ -58,7 +58,7 @@ The pipes are testable independently of the evaluator, allowing focused unit tes
 - `PipeFunction` interface extending `RegistryItem`
 - `PipeRegistry` class wrapping `BaseComposableRegistry`
 - `CorePipesBundle` with built-in pipes
-- Core pipes: `filter`, `map`, `first`, `last`, `join`, `length`, `flatten`, `reverse`, `unique`
+- Core pipes: `filter`, `map`, `first`, `last`, `join`, `length`, `flatten`, `reverse`, `unique`, `path`
 - Unit tests for each pipe (no evaluator dependency)
 - Error types: `PipeError`, `PipeArgumentError`
 
@@ -174,6 +174,14 @@ The pipes are testable independently of the evaluator, allowing focused unit tes
   - Args: none
   - Output: array with unique values (preserves order, keeps first occurrence)
   - Example: `[1,2,2,3,1]` = `[1,2,3]`
+
+- [x] R-PIPE-50: `path` pipe - joins array of string segments into a `/`-separated file path
+  - Input: array of segments (non-strings coerced to strings)
+  - Args: none
+  - Output: normalized path string with empty segments skipped, double slashes removed
+  - Security: rejects `..` in any segment after coercion
+  - Example: `["drivers", "max", "helmet.png"]` = `"drivers/max/helmet.png"`
+  - Added by: [file-access-runtime.done.prd.md](../../../platform/documentation/files/file-access-runtime.done.prd.md)
 
 ### Error Handling
 
@@ -431,7 +439,7 @@ export class CorePipesBundle implements RegistryBundle<PipeFunction> {
 ### Criteria
 
 **Registry:**
-- [x] AC-PIPE-01: Given CorePipesBundle, when registry.reload() is called, then 9 pipes are registered
+- [x] AC-PIPE-01: Given CorePipesBundle, when registry.reload() is called, then 10 pipes are registered
 - [x] AC-PIPE-02: Given registry with 'filter' pipe, when registry.get('filter') is called, then returns RegistryEntry with bundleId 'core'
 
 **Filter Pipe:**
@@ -459,6 +467,10 @@ export class CorePipesBundle implements RegistryBundle<PipeFunction> {
 - [x] AC-PIPE-14: Given `[[1,2],[3,4]]`, when flatten.execute() is called, then result is `[1,2,3,4]`
 - [x] AC-PIPE-15: Given `[1,2,3]`, when reverse.execute() is called, then result is `[3,2,1]` and original array unchanged
 - [x] AC-PIPE-16: Given `[1,2,2,3,1]`, when unique.execute() is called, then result is `[1,2,3]`
+
+**Path Pipe:**
+- [x] AC-PIPE-17: Given `["drivers", "max", "helmet.png"]`, when path.execute() is called, then result is `"drivers/max/helmet.png"`
+- [x] AC-PIPE-18: Given `["output", "..", "secrets"]`, when path.execute() is called, then throws error rejecting `..` segments (security)
 
 ## Test File Structure
 

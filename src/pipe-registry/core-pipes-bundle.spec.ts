@@ -33,7 +33,7 @@ describe('CorePipesBundle', () => {
 
       const pipes = await bundle.load()
 
-      expect(pipes.size).toBe(11)
+      expect(pipes.size).toBe(12)
     })
 
     it('should return pipes with proper PipeFunction interface', async () => {

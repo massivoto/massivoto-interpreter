@@ -1,6 +1,6 @@
 import { CoreCommandRegistry } from '../command-registry/command-registry.js'
 import { FetchHandler } from '../core-handlers/mcp/client/fetch/fetch.handler.js'
-import { FileSystemWriterHandler } from '../core-handlers/mcp/client/filesystem/filesystem.handler.js'
+import { FileSaveHandler } from '../core-handlers/file/file-save.handler.js'
 import { LogHandler } from '../core-handlers/utils/log.handler.js'
 import { SetHandler } from '../core-handlers/utils/set.handler.js'
 
@@ -22,8 +22,8 @@ export async function registerStandardCommandHandlers(): Promise<CoreCommandRegi
   const reader = new FetchHandler()
   await registry.addRegistryItem('@web/read', reader)
 
-  const fileWriter = new FileSystemWriterHandler()
-  await registry.addRegistryItem('@file/write', fileWriter)
+  const fileSave = new FileSaveHandler()
+  await registry.addRegistryItem('@file/save', fileSave)
 
   const logger = new LogHandler()
   await registry.addRegistryItem('@utils/log', logger)

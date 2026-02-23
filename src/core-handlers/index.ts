@@ -16,6 +16,9 @@ export { TextHandler } from './ai/text.handler.js'
 export { GenerateImageHandler } from './ai/image/generate.handler.js'
 export { ReverseImageHandler } from './ai/prompt/reverse-image.handler.js'
 
+// File
+export { FileSaveHandler } from './file/file-save.handler.js'
+
 // MCP
 export { FetchHandler } from './mcp/client/fetch/fetch.handler.js'
 export { FileSystemWriterHandler } from './mcp/client/filesystem/filesystem.handler.js'

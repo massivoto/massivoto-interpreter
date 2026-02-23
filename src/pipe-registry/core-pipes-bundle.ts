@@ -21,6 +21,7 @@ import type { RegistryBundle } from '@massivoto/kit'
 import type { PipeFunction } from './types.js'
 import { BasePipeFunction } from './types.js'
 import { PipeTypeError, PipeArgumentError } from './errors.js'
+import { PathPipe } from './path-pipe.js'
 
 // =============================================================================
 // Pipe Implementations
@@ -320,6 +321,7 @@ export class CorePipesBundle implements RegistryBundle<PipeFunction> {
       new UniquePipe(),
       new SlicePipe(),
       new TailPipe(),
+      new PathPipe(),
     ]
 
     // Register each pipe by its id
