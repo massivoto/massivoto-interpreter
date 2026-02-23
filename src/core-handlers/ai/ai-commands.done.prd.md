@@ -11,7 +11,7 @@
 |---------|--------|----------|
 | Handler Infrastructure | DONE | 4/4 |
 | @ai/text Handler | DONE | 5/5 |
-| @ai/image Handler | DONE | 5/5 |
+| @ai/image/generate Handler | DONE | 5/5 |
 | Provider Integration | DONE | 4/4 |
 | Testing | DONE | 4/4 |
 | **Overall** | **DONE** | **100%** |
@@ -29,7 +29,7 @@
 AI generation is a core use case for Massivoto. Users need to generate text and images within their automation workflows. This PRD defines two commands:
 
 - `@ai/text` - Text generation (LLM completion)
-- `@ai/image` - Image generation (Imagen, DALL-E)
+- `@ai/image/generate` - Image generation (Imagen, DALL-E)
 
 Both commands follow the same pattern: provider-agnostic interface with sensible defaults (Gemini).
 
@@ -38,6 +38,7 @@ Both commands follow the same pattern: provider-agnostic interface with sensible
 | Date | Option | Decision | Rationale |
 |------|--------|----------|-----------|
 | 2026-01-26 | Command naming | **`@ai/text` + `@ai/image`** | Clear intent, symmetric naming. Better than `@ai/generate type="..."`. |
+| 2026-02-23 | Command rename | **@ai/image -> @ai/image/generate** | Opens namespace for siblings (edit, upscale). Consistent with @ai/prompt/* family convention |
 | 2026-01-26 | Provider handling | **Argument with default** | `provider="gemini"` default. Easy to swap providers without changing command. |
 | 2026-01-26 | Image output format | **Base64** | Simpler for v0.5. No external storage needed. URL option deferred to v1.0. |
 | 2026-01-26 | API key storage | **Env var + env.dist** | `GEMINI_API_KEY` from env for v0.5. CredentialVault deferred to v1.0. |
@@ -46,7 +47,7 @@ Both commands follow the same pattern: provider-agnostic interface with sensible
 
 **In scope:**
 - `@ai/text` command handler with Gemini support
-- `@ai/image` command handler with Gemini (Imagen) support
+- `@ai/image/generate` command handler with Gemini (Imagen) support
 - Provider abstraction for future OpenAI/Anthropic support
 - Unit tests with mocked providers
 - `env.dist` file documenting required environment variables
@@ -70,7 +71,7 @@ Both commands follow the same pattern: provider-agnostic interface with sensible
 
 - [x] R-AI-01: Create `ai/` directory in core-handlers with index barrel export
 - [x] R-AI-02: Define `AiProvider` interface for text and image generation
-- [x] R-AI-03: Register `@ai/text` and `@ai/image` handlers in CoreHandlersBundle
+- [x] R-AI-03: Register `@ai/text` and `@ai/image/generate` handlers in CoreHandlersBundle
 - [x] R-AI-04: Create `env.dist` at repo root with `GEMINI_API_KEY=your_key_here`
 
 ### @ai/text Handler
@@ -102,7 +103,7 @@ Both commands follow the same pattern: provider-agnostic interface with sensible
 | `maxTokens` | No | - | number | Limit response length |
 | `system` | No | - | string | System prompt for context |
 
-### @ai/image Handler
+### @ai/image/generate Handler
 
 **Last updated:** 2026-01-26
 **Test:** `npx vitest run packages/runtime/src/interpreter/core-handlers/ai/image.handler.spec.ts`
@@ -117,8 +118,8 @@ Both commands follow the same pattern: provider-agnostic interface with sensible
 **Command Signature:**
 
 ```oto
-@ai/image prompt="A fox in a forest" output=foxImage
-@ai/image provider="gemini" prompt="Logo for {brand}" size="square" style="illustration" output=logo
+@ai/image/generate prompt="A fox in a forest" output=foxImage
+@ai/image/generate provider="gemini" prompt="Logo for {brand}" size="square" style="illustration" output=logo
 ```
 
 | Arg | Required | Default | Type | Description |
@@ -180,14 +181,14 @@ interface ImageResult {
 **Progress:** 4/4 (100%)
 
 - [x] R-AI-40: Unit test `@ai/text` with mocked GeminiProvider
-- [x] R-AI-41: Unit test `@ai/image` with mocked GeminiProvider
+- [x] R-AI-41: Unit test `@ai/image/generate` with mocked GeminiProvider
 - [x] R-AI-42: Test expression resolution in prompts (`{variable}` expansion)
 - [x] R-AI-43: Test error handling for missing API key, rate limits, invalid provider
 
 ## Acceptance Criteria
 
 - [x] AC-01: `@ai/text prompt="Hello" output=greeting` stores generated text in `greeting` variable
-- [x] AC-02: `@ai/image prompt="A cat" output=catPic` stores base64 image in `catPic` variable
+- [x] AC-02: `@ai/image/generate prompt="A cat" output=catPic` stores base64 image in `catPic` variable
 - [x] AC-03: Expression `{name}` in prompt is resolved before API call
 - [x] AC-04: Missing `prompt` or `output` argument returns clear error
 - [x] AC-05: Unknown provider returns clear error listing valid options
@@ -217,10 +218,10 @@ Users copy `env.dist` to `.env` and fill in their keys. The `.env` file is gitig
 @utils/log message={tagline}
 
 # Image generation with options
-@ai/image prompt="Futuristic city at sunset" size="landscape" style="illustration" output=cityImage
+@ai/image/generate prompt="Futuristic city at sunset" size="landscape" style="illustration" output=cityImage
 
 # Using generated image in confirm applet
-@ai/image prompt="Logo concept for {brand}" output=logo
+@ai/image/generate prompt="Logo concept for {brand}" output=logo
 @human/confirm message="Do you approve this logo?" resourceUrl={"data:image/png;base64," + logo} output=approved
 ```
 

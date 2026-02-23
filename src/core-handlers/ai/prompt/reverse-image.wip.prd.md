@@ -42,7 +42,7 @@ The v0.6 OTO program for "The Race Was Great" starts with:
 @ai/prompt/reverseImage image=~/f1.png output=f1RacingPrompt
 ```
 
-This command takes an image and produces a detailed text prompt that can reproduce similar images with variations. The generated prompt includes a `{{variation}}` placeholder (standard Mustache/Handlebars convention) so the same prompt can be reused with different scenes via `@ai/generateImage`.
+This command takes an image and produces a detailed text prompt that can reproduce similar images with variations. The generated prompt includes a `{{variation}}` placeholder (standard Mustache/Handlebars convention) so the same prompt can be reused with different scenes via `@ai/image/generate`.
 
 This is the first command in the `@ai/prompt/*` family — a set of prompt-engineering commands that automate what humans do manually today.
 
@@ -300,7 +300,7 @@ Verified by human: prompt quality, `{{variation}}` placement, focus emphasis.
 // Full pipeline: reverse-prompt -> variations -> generate -> validate -> save
 @ai/prompt/reverseImage image=~/f1.png output=f1RacingPrompt
 @set/array values=['overtake under the rain', 'first turn', 'monaco tunnel'] output=situations
-@ai/generateImage context=situation content=f1RacingPrompt forEach=situations->situation retry=3 collect=images
+@ai/image/generate prompt=f1RacingPrompt variation=situation forEach=situations->situation retry=3 collect=images
 @human/validation items=images display=gallery output=selectedImages
 @file/save file={["selection/", "f1-", $index, ".png"] | path} forEach=selectedImages->image
 ```

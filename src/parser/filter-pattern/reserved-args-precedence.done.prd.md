@@ -39,7 +39,7 @@ evaluate them in a defined order. Currently, `forEach=` and `if=` are mutually e
 ```oto
 @block/begin forEach=situations -> situation
   @block/begin if={situation.length > 2}
-    @ai/generateImage variation=situation retry=3
+    @ai/image/generate variation=situation retry=3
   @block/end
 @block/end
 ```
@@ -49,7 +49,7 @@ filter evaluated inside the `forEach` loop, because the condition often referenc
 loop variable — which only exists after `forEach` binds it:
 
 ```oto
-@ai/generateImage variation=situation forEach=situations->situation retry=3 if={situation.length > 2}
+@ai/image/generate variation=situation forEach=situations->situation retry=3 if={situation.length > 2}
 ```
 
 This is the dominant model in declarative languages: Python comprehensions
@@ -85,7 +85,7 @@ For a global guard ("skip this entire line"), use `@flow/if` or a conditional bl
 
 ```oto
 @block/begin if={isReady}
-  @ai/generateImage forEach=situations->situation retry=3
+  @ai/image/generate forEach=situations->situation retry=3
 @block/end
 ```
 
@@ -256,7 +256,7 @@ For a global guard ("skip this entire line"), use `@flow/if` or a conditional bl
 
 - ✅ R-FILTER-82: `retry=` applies per individual execution. In a `forEach`, each item gets its own retry budget:
   ```oto
-  @ai/generateImage forEach=prompts->prompt retry=3 collect=images
+  @ai/image/generate forEach=prompts->prompt retry=3 collect=images
   # prompt[0] may retry 3 times, prompt[1] may retry 3 times, independently
   ```
 
@@ -273,7 +273,7 @@ For a global guard ("skip this entire line"), use `@flow/if` or a conditional bl
 
 - ✅ R-FILTER-102: With `forEach`, `collect=` appends each iteration's result to the array:
   ```oto
-  @ai/generateImage forEach=prompts->prompt collect=images
+  @ai/image/generate forEach=prompts->prompt collect=images
   # images = [result0, result1, result2, ...]
   ```
   Filtered items (skipped by `if=`) do NOT append to the collection.
@@ -330,22 +330,22 @@ For a global guard ("skip this entire line"), use `@flow/if` or a conditional bl
 
 **Retry:**
 
-- [x] AC-FP-05: Given `@ai/generateImage prompt="F1 car" retry=2` and the AI fails twice then succeeds,
+- [x] AC-FP-05: Given `@ai/image/generate prompt="F1 car" retry=2` and the AI fails twice then succeeds,
       when executed, then the command succeeds on the 3rd attempt (1 initial + 2 retries)
 
-- [x] AC-FP-06: Given `@ai/generateImage prompt="F1 car" retry=2` and the AI fails 3 times,
+- [x] AC-FP-06: Given `@ai/image/generate prompt="F1 car" retry=2` and the AI fails 3 times,
       when executed, then the command throws the last error after exhausting retries
 
-- [x] AC-FP-07: Given `@ai/generateImage forEach=prompts->prompt retry=2`,
+- [x] AC-FP-07: Given `@ai/image/generate forEach=prompts->prompt retry=2`,
       when prompt[0] fails once and prompt[1] succeeds immediately,
       then prompt[0] retries independently (prompt[1] does not waste retries)
 
 **Collect:**
 
-- [x] AC-FP-08: Given `@ai/generateImage forEach=situations->situation collect=images`
+- [x] AC-FP-08: Given `@ai/image/generate forEach=situations->situation collect=images`
       with 3 situations, when executed, then `images` is an array of 3 results
 
-- [x] AC-FP-09: Given `@ai/generateImage forEach=situations->situation if={situation != 'pit stop'} collect=images`
+- [x] AC-FP-09: Given `@ai/image/generate forEach=situations->situation if={situation != 'pit stop'} collect=images`
       with 4 situations (1 filtered), when executed, then `images` has 3 elements (filtered item not collected)
 
 - [x] AC-FP-10: Given `@ai/describe prompt="F1" collect=results` (no forEach),

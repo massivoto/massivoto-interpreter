@@ -41,7 +41,7 @@
 
 **Decision:** The command automates prompt engineering from a reference image. Prompt quality is the entire value — the system prompt sent to the AI model must be carefully engineered.
 
-**Rationale:** Everything downstream (`@ai/generateImage`, `@human/validation`, `@file/save`) depends on having a high-quality base prompt.
+**Rationale:** Everything downstream (`@ai/image/generate`, `@human/validation`, `@file/save`) depends on having a high-quality base prompt.
 
 ---
 
@@ -52,7 +52,7 @@
 1. **Prompt engineering baked in** — system prompt instructs the model to produce a prompt optimized for image regeneration, not just a description
 2. **`{{variation}}` injection** — output is structured as a reusable template
 3. **One-liner in OTO** — replaces a multi-step manual workflow
-4. **Pipeable** — output feeds directly into `@ai/generateImage`
+4. **Pipeable** — output feeds directly into `@ai/image/generate`
 
 **Rationale:** Anyone can call a vision API. The differentiator is the system prompt doing the prompt-engineering work.
 
@@ -93,7 +93,7 @@ Not applicable — internal platform command. Discovered through docs and comman
 
 **Acceptance Criteria:**
 - Given a valid image file path, When `@ai/prompt/reverseImage image=~/photo.png output=result` is executed, Then `result` contains a non-empty string prompt describing style, composition, colors, content, and atmosphere
-- Given the generated prompt is fed to `@ai/generateImage`, When an image is generated, Then it is visually similar in style and content to the original
+- Given the generated prompt is fed to `@ai/image/generate`, When an image is generated, Then it is visually similar in style and content to the original
 - Given no `focus` arg is provided, When the command runs, Then the prompt captures all aspects of the image (no bias)
 
 **Test Approach:** Integration test with a mock AI provider returning a canned prompt. Manual QA for prompt quality against real models.
