@@ -13,7 +13,7 @@ export { GridHandler } from './human/grid.handler.js'
 
 // AI
 export { TextHandler } from './ai/text.handler.js'
-export { ImageHandler } from './ai/image.handler.js'
+export { GenerateImageHandler } from './ai/image/generate.handler.js'
 export { ReverseImageHandler } from './ai/prompt/reverse-image.handler.js'
 
 // MCP

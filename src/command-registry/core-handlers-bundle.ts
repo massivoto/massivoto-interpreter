@@ -18,8 +18,8 @@ import { LogHandler } from '../core-handlers/utils/log.handler.js'
 import { SetHandler } from '../core-handlers/utils/set.handler.js'
 import {
   ConfirmHandler,
+  GenerateImageHandler,
   GridHandler,
-  ImageHandler,
   ReverseImageHandler,
   TextHandler,
 } from '../core-handlers/index.js'
@@ -60,9 +60,9 @@ export class CoreHandlersBundle implements RegistryBundle<CommandHandler<any>> {
       // Human validation handlers (R-CONFIRM-101, R-GRID-81)
       new ConfirmHandler(),
       new GridHandler(),
-      // AI generation handlers (R-AI-03)
+      // AI generation handlers (R-AI-03, R-GEN-82)
       new TextHandler(),
-      new ImageHandler(),
+      new GenerateImageHandler(),
       // AI prompt engineering handlers (R-RIMG-82)
       new ReverseImageHandler(),
     ]

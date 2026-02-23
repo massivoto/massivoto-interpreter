@@ -12,17 +12,13 @@
  */
 import type { AiProvider, AiProviderName } from '../types.js'
 import { DEFAULT_AI_PROVIDER } from '../types.js'
+import { GEMINI_MODEL_TIERS, resolveModel } from '../defaults.js'
 import { GeminiProvider } from '../providers/gemini.provider.js'
 import { ActionResult, ExecutionContext } from '@massivoto/kit'
 import { BaseCommandHandler } from '../../../handlers/index.js'
 import { toImageData } from '../../../utils/file-utils.js'
 
 const SUPPORTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']
-
-const GEMINI_MODEL_TIERS: Record<string, string> = {
-  best: 'gemini-2.0-flash',
-  light: 'gemini-2.0-flash-lite',
-}
 
 export class ReverseImageHandler extends BaseCommandHandler<string> {
   readonly type = 'command' as const
@@ -100,8 +96,8 @@ export class ReverseImageHandler extends BaseCommandHandler<string> {
         this.providers.set(providerName, provider)
       }
 
-      // R-RIMG-61 to R-RIMG-63: Model tier resolution
-      const resolvedModel = this.resolveModel(modelArg, providerName)
+      // R-RIMG-61 to R-RIMG-63: Model tier resolution (shared from ai/defaults.ts)
+      const resolvedModel = resolveModel(modelArg, providerName)
       const systemPrompt = this.buildSystemPrompt(focus)
 
       const result = await provider.analyzeImage({
@@ -116,14 +112,6 @@ export class ReverseImageHandler extends BaseCommandHandler<string> {
       const errorMessage = error instanceof Error ? error.message : String(error)
       return this.handleFailure(errorMessage, errorMessage)
     }
-  }
-
-  private resolveModel(model: string | undefined, provider: string): string {
-    const raw = model ?? 'best'
-    if (provider === 'gemini' && raw in GEMINI_MODEL_TIERS) {
-      return GEMINI_MODEL_TIERS[raw]
-    }
-    return raw
   }
 
   private buildSystemPrompt(focus?: string): string {
