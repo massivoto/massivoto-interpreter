@@ -4,7 +4,7 @@
  * Requirements:
  * - R-PIPE-41 to R-PIPE-49: Core Pipes Implementation
  *
- * Provides 10 built-in pipes:
+ * Provides 11 built-in pipes:
  * - filter: Filter array by property value (filter:prop:value) or truthy (filter:prop)
  * - map: Extract property from each item
  * - first: Get first element
@@ -15,6 +15,7 @@
  * - reverse: Reverse array (non-mutating)
  * - unique: Remove duplicates preserving order
  * - slice: Get array slice (slice:start:end)
+ * - tail: Get last N elements (tail:count)
  */
 import type { RegistryBundle } from '@massivoto/kit'
 import type { PipeFunction } from './types.js'
@@ -257,6 +258,30 @@ class SlicePipe extends BasePipeFunction {
   }
 }
 
+/**
+ * TailPipe - returns the last N elements of an array.
+ *
+ * @example
+ * ```dsl
+ * {items | tail:2}  // ['c', 'd'] from ['a', 'b', 'c', 'd']
+ * {items | tail:1}  // ['d'] from ['a', 'b', 'c', 'd']
+ * ```
+ */
+class TailPipe extends BasePipeFunction {
+  readonly id = 'tail'
+
+  async execute(input: any, args: any[]): Promise<any[]> {
+    if (!Array.isArray(input)) {
+      throw new PipeTypeError('tail', 'array', typeof input)
+    }
+    const count = args[0]
+    if (typeof count !== 'number' || count < 0) {
+      throw new PipeArgumentError('tail', 'count (positive number)')
+    }
+    return input.slice(-count)
+  }
+}
+
 // =============================================================================
 // CorePipesBundle
 // =============================================================================
@@ -294,6 +319,7 @@ export class CorePipesBundle implements RegistryBundle<PipeFunction> {
       new ReversePipe(),
       new UniquePipe(),
       new SlicePipe(),
+      new TailPipe(),
     ]
 
     // Register each pipe by its id

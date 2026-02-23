@@ -30,6 +30,7 @@ export async function registerStandardCommandHandlers(): Promise<CoreCommandRegi
 
   const setter = new SetHandler()
   await registry.addRegistryItem('@utils/set', setter)
+  await registry.addRegistryItem('@set/array', setter)
 
   return registry
 }
