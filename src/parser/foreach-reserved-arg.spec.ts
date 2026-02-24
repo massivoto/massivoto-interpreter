@@ -75,19 +75,32 @@ describe('ForEach Reserved Argument', () => {
     })
   })
 
-  describe('R-FE-02: System variable identifiers (_ prefix)', () => {
-    it('parses identifier with _ prefix (_index)', () => {
-      const parsing = parse('@utils/log message=_index')
+  describe('R-FE-02: System variable identifiers ($-prefix and _ prefix)', () => {
+    it('parses $index as system-variable node', () => {
+      const parsing = parse('@utils/log message=$index')
       expect(parsing.isAccepted()).toBe(true)
       const instr = parsing.value as InstructionNode
 
       const arg = instr.args[0]
-      expect(arg.value).toEqual({ type: 'identifier', value: '_index' })
+      expect(arg.value).toEqual({ type: 'system-variable', name: 'index' })
     })
 
-    it('parses identifier with _ prefix (_first)', () => {
-      const parsing = parse('@utils/log message=_first')
+    it('parses $first as system-variable node', () => {
+      const parsing = parse('@utils/log message=$first')
       expect(parsing.isAccepted()).toBe(true)
+      const instr = parsing.value as InstructionNode
+
+      const arg = instr.args[0]
+      expect(arg.value).toEqual({ type: 'system-variable', name: 'first' })
+    })
+
+    it('parses _identifier as regular identifier (underscore prefix still valid)', () => {
+      const parsing = parse('@utils/log message=_myVar')
+      expect(parsing.isAccepted()).toBe(true)
+      const instr = parsing.value as InstructionNode
+
+      const arg = instr.args[0]
+      expect(arg.value).toEqual({ type: 'identifier', value: '_myVar' })
     })
 
     it('parses iterator with _ prefix (unusual but allowed)', () => {

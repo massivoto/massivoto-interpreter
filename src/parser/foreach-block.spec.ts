@@ -166,37 +166,35 @@ describe('ForEach Block Integration', () => {
   })
 
   describe('forEach with system variables in body', () => {
-    it('parses body using _index system variable', () => {
+    it('parses body using $index system variable', () => {
       const source = `@block/begin forEach=users -> user
-@utils/log message=_index
+@utils/log message=$index
 @block/end`
       const result = parser.val(source)
 
       const block = result.body[0] as BlockNode
       const instruction = block.body[0] as InstructionNode
       expect(instruction.args[0].value).toEqual({
-        type: 'identifier',
-        value: '_index',
+        type: 'system-variable',
+        name: 'index',
       })
     })
 
-    it('parses body using _first, _last, _odd, _even', () => {
-      // Note: Ternary expressions are not yet supported, using simple identifiers
+    it('parses body using $first, $last, $odd, $even', () => {
       const source = `@block/begin forEach=items -> item
-@utils/log message=_first
-@utils/log message=_last
-@utils/log message=_odd
-@utils/log message=_even
+@utils/log message=$first
+@utils/log message=$last
+@utils/log message=$odd
+@utils/log message=$even
 @block/end`
       const result = parser.val(source)
 
       const block = result.body[0] as BlockNode
       expect(block.body).toHaveLength(4)
-      // Verify the system variables are parsed as identifiers
       const instruction = block.body[0] as InstructionNode
       expect(instruction.args[0].value).toEqual({
-        type: 'identifier',
-        value: '_first',
+        type: 'system-variable',
+        name: 'first',
       })
     })
   })

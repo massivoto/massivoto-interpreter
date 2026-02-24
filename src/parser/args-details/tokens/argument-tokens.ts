@@ -6,6 +6,7 @@ import {
   LiteralBooleanNode,
   LiteralNumberNode,
   LiteralStringNode,
+  SystemVariableNode,
 } from '../../ast.js'
 
 import {
@@ -13,6 +14,7 @@ import {
   identifier,
   numberLiteral,
   stringLiteral,
+  systemVariable,
 } from '../../shared-parser.js'
 import {
   fileLiteralParser,
@@ -24,6 +26,7 @@ export interface UnaryTokens {
   PLUS: SingleParser<'+'>
   MINUS: SingleParser<'-'>
   IDENTIFIER: SingleParser<IdentifierNode>
+  SYSTEM_VARIABLE: SingleParser<SystemVariableNode>
   NUMBER: SingleParser<LiteralNumberNode>
   STRING: SingleParser<LiteralStringNode>
   //SINGLE_STRING: SingleParser<LiteralStringNode>
@@ -106,6 +109,13 @@ export function createArgumentTokens(genlex: IGenLex): ArgTokens {
   const GT = genlex.tokenize('>', 'GT', 1000)
   const GTE = genlex.tokenize('>=', 'GTE', 500)
 
+  // R-SYSVAR-21: System variable token ($identifier) must beat regular identifier
+  const SYSTEM_VARIABLE_TOKEN = genlex.tokenize(
+    systemVariable,
+    'SYSTEM_VARIABLE',
+    900,
+  )
+
   // Number must have a lower priority than '+' and '-'
   const IDENTIFIER = genlex.tokenize(identifier, 'IDENTIFIER', 1000)
   const STRING_LITERAL = genlex.tokenize(stringLiteral, 'STRING_LITERAL', 2000)
@@ -133,6 +143,12 @@ export function createArgumentTokens(genlex: IGenLex): ArgTokens {
       type: 'identifier',
       value: v,
     })),
+    SYSTEM_VARIABLE: SYSTEM_VARIABLE_TOKEN.map(leanToken).map(
+      (v: string) => ({
+        type: 'system-variable' as const,
+        name: v,
+      }),
+    ),
     STRING: STRING_LITERAL.map(leanToken).map((v: string) => ({
       type: 'literal-string',
       value: v,

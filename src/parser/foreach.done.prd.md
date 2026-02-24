@@ -1,7 +1,7 @@
 # PRD: ForEach Reserved Argument
 
-**Status:** IMPLEMENTED
-**Last updated:** 2026-01-24
+**Status:** ITERATING
+**Last updated:** 2026-02-24
 
 > - DRAFT: Coding should not start, requirements being defined
 > - APPROVED: Code can start, requirements stable
@@ -49,19 +49,19 @@ The mapper expression `users -> user` provides:
 
 ### System Variables
 
-Inside a forEach block, the runtime automatically injects **system variables** prefixed with `_`:
+Inside a forEach block, the runtime automatically injects **system variables** prefixed with `$`:
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| `_index` | number | Current iteration index (0-based) |
-| `_count` | number | Current iteration count (1-based, equals `_index + 1`) |
-| `_length` | number | Total collection length |
-| `_first` | boolean | `true` on first iteration (`_index === 0`) |
-| `_last` | boolean | `true` on last iteration (`_index === _length - 1`) |
-| `_odd` | boolean | `true` if `_index` is odd |
-| `_even` | boolean | `true` if `_index` is even |
+| `$index` | number | Current iteration index (0-based) |
+| `$count` | number | Current iteration count (1-based, equals `$index + 1`) |
+| `$length` | number | Total collection length |
+| `$first` | boolean | `true` on first iteration (`$index === 0`) |
+| `$last` | boolean | `true` on last iteration (`$index === $length - 1`) |
+| `$odd` | boolean | `true` if 1-based count is odd (1st, 3rd, 5th...) |
+| `$even` | boolean | `true` if 1-based count is even (2nd, 4th, 6th...) |
 
-The `_` prefix convention reserves these identifiers for system use. User-defined variables should not start with `_`.
+The `$` prefix convention reserves these identifiers for system use. System variables are parsed as `SystemVariableNode` (distinct from `IdentifierNode`) and resolved via scope chain only (no fallback to `context.data`). See [system-variables.wip.prd.md](../system-variables.wip.prd.md) for the full migration from `_` to `$`.
 
 ### Dependency on Variable Scope
 
@@ -77,17 +77,17 @@ ForEach **requires** the scope chain from [variable-scope.prd.md](../evaluator/v
 |------|--------|----------|-----------|
 | 2026-01-20 | Syntax: `forEach="item of items"` vs `forEach=items -> item` | **Mapper syntax** | Reuses implemented mapper parser, consistent with expression grammar |
 | 2026-01-20 | Location: instruction arg vs block arg | **Block arg** | forEach wraps multiple statements, block is natural container |
-| 2026-01-20 | Index variable: explicit `index=i` vs implicit | **Implicit `_index`** | Simpler syntax, no extra AST types needed |
-| 2026-01-20 | System variable prefix | **`_` (underscore)** | Common convention for internal/system variables |
+| 2026-01-20 | Index variable: explicit `index=i` vs implicit | **Implicit `$index`** | Simpler syntax, dedicated SystemVariableNode AST type |
+| 2026-01-20 | System variable prefix | ~~`_` (underscore)~~ **`$` (dollar)** | Migrated to `$` sigil (n8n, Bash, PHP precedent). See [system-variables.wip.prd.md](../system-variables.wip.prd.md) |
 | 2026-01-20 | Empty collection | **Skip block** | `forEach=[] -> x` executes 0 iterations, no error |
 | 2026-01-20 | Non-iterable | **Runtime error** | `forEach=42 -> x` throws "Cannot iterate over number" |
 
 ## Scope
 
 **In scope:**
-- `_` prefix convention for system variables
+- `$` prefix convention for system variables (migrated from `_` prefix)
 - `forEach=` reserved argument accepting mapper expression
-- System variables: `_index`, `_count`, `_length`, `_first`, `_last`, `_odd`, `_even`
+- System variables: `$index`, `$count`, `$length`, `$first`, `$last`, `$odd`, `$even`
 - Update `BlockNode` with `forEach` field
 - Parser integration (token, grammar)
 - Interpreter support (iteration, scope push/pop, system variable injection)
@@ -295,13 +295,13 @@ ForEach **requires** the scope chain from [variable-scope.prd.md](../evaluator/v
 - [x] AC-FE-03: Given `@block/begin forEach=users` (no arrow), when parsed, then parser rejects with "forEach requires 'collection -> variable' syntax"
 - [x] AC-FE-04: **SUPERSEDED** - forEach= and if= now coexist per filter pattern. See [reserved-args-precedence.wip.prd.md](./filter-pattern/reserved-args-precedence.wip.prd.md)
 
-**System Variables:**
-- [x] AC-FE-05: Given forEach over 3-element array, when `_index` accessed, then values are 0, 1, 2
-- [x] AC-FE-06: Given forEach over 3-element array, when `_count` accessed, then values are 1, 2, 3
-- [x] AC-FE-07: Given forEach over 3-element array, when `_length` accessed, then value is always 3
-- [x] AC-FE-08: Given forEach over array, when `_first` accessed on first iteration, then value is `true`
-- [x] AC-FE-09: Given forEach over array, when `_last` accessed on last iteration, then value is `true`
-- [x] AC-FE-10: Given forEach over array, when `_odd` and `_even` accessed, then they alternate correctly
+**System Variables (migrated to $-prefix):**
+- [x] AC-FE-05: Given forEach over 3-element array, when `$index` accessed, then values are 0, 1, 2
+- [x] AC-FE-06: Given forEach over 3-element array, when `$count` accessed, then values are 1, 2, 3
+- [x] AC-FE-07: Given forEach over 3-element array, when `$length` accessed, then value is always 3
+- [x] AC-FE-08: Given forEach over array, when `$first` accessed on first iteration, then value is `true`
+- [x] AC-FE-09: Given forEach over array, when `$last` accessed on last iteration, then value is `true`
+- [x] AC-FE-10: Given forEach over array, when `$odd` and `$even` accessed, then they alternate correctly
 
 **Execution:**
 - [x] AC-FE-11: Given `users = [{name: "Emma"}, {name: "Carlos"}]` and forEach block logging `user.name`, when executed, then logs show "Emma" then "Carlos"
@@ -309,7 +309,7 @@ ForEach **requires** the scope chain from [variable-scope.prd.md](../evaluator/v
 - [x] AC-FE-13: Given `users = "not-array"` and forEach block, when executed, then runtime error "Cannot iterate over string"
 - [x] AC-FE-14: Given nested forEach (users -> user, user.tweets -> tweet), when executed, then both `user` and `tweet` are resolvable in inner block
 - [x] AC-FE-15: Given forEach that sets `output=data.count` inside loop, when loop completes, then `context.data.count` reflects final value
-- [x] AC-FE-16: Given forEach with iterator `user`, when loop completes, then `user` and `_index` are no longer resolvable (scope popped)
+- [x] AC-FE-16: Given forEach with iterator `user`, when loop completes, then `user` and `$index` are no longer resolvable (scope popped)
 
 **General:**
 - [x] All automated tests pass

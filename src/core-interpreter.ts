@@ -17,6 +17,7 @@ import {
   write,
 } from '@massivoto/kit'
 import lodashSet from 'lodash.set'
+import type { ScopeChain } from '@massivoto/kit'
 
 import type { GotoResult } from './core-handlers/flow/goto.handler.js'
 import type { ExitResult } from './core-handlers/flow/exit.handler.js'
@@ -132,6 +133,21 @@ interface StatementListResult {
   flow: FlowControl
   actions: ActionLog[]
   cost: number
+}
+
+// R-SYSVAR-63: Extracted helper to inject $-prefixed system variables into scope
+function writeSystemVariables(
+  index: number,
+  length: number,
+  scopeChain: ScopeChain,
+): void {
+  write('$index', index, scopeChain)
+  write('$count', index + 1, scopeChain)
+  write('$length', length, scopeChain)
+  write('$first', index === 0, scopeChain)
+  write('$last', index === length - 1, scopeChain)
+  write('$odd', (index + 1) % 2 === 1, scopeChain)
+  write('$even', (index + 1) % 2 === 0, scopeChain)
 }
 
 export class CoreInterpreter implements Interpreter {
@@ -697,14 +713,8 @@ export class CoreInterpreter implements Interpreter {
       currentContext = cloneExecutionContext(currentContext)
       currentContext.scopeChain = pushScope(currentContext.scopeChain)
 
-      // Inject system variables
-      write('_index', index, currentContext.scopeChain)
-      write('_count', index + 1, currentContext.scopeChain)
-      write('_length', length, currentContext.scopeChain)
-      write('_first', index === 0, currentContext.scopeChain)
-      write('_last', index === length - 1, currentContext.scopeChain)
-      write('_odd', (index + 1) % 2 === 1, currentContext.scopeChain)
-      write('_even', (index + 1) % 2 === 0, currentContext.scopeChain)
+      // R-SYSVAR-61: Inject $-prefixed system variables
+      writeSystemVariables(index, length, currentContext.scopeChain)
 
       // Inject the iterator variable
       write(iteratorName, item, currentContext.scopeChain)
@@ -808,14 +818,8 @@ export class CoreInterpreter implements Interpreter {
       currentContext = cloneExecutionContext(currentContext)
       currentContext.scopeChain = pushScope(currentContext.scopeChain)
 
-      // Inject system variables (R-FILTER-44: count ALL items)
-      write('_index', index, currentContext.scopeChain)
-      write('_count', index + 1, currentContext.scopeChain)
-      write('_length', length, currentContext.scopeChain)
-      write('_first', index === 0, currentContext.scopeChain)
-      write('_last', index === length - 1, currentContext.scopeChain)
-      write('_odd', (index + 1) % 2 === 1, currentContext.scopeChain)
-      write('_even', (index + 1) % 2 === 0, currentContext.scopeChain)
+      // R-SYSVAR-62: Inject $-prefixed system variables (R-FILTER-44: count ALL items)
+      writeSystemVariables(index, length, currentContext.scopeChain)
 
       write(iteratorName, item, currentContext.scopeChain)
 

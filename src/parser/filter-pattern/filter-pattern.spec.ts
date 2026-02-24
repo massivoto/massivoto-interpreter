@@ -123,7 +123,7 @@ describe('Filter Pattern: forEach + if (R-FILTER-41 to R-FILTER-44)', () => {
   })
 
   describe('R-FILTER-44: system variables count ALL items', () => {
-    it('AC-FP-04: _index and _length count all items, not just filtered ones', async () => {
+    it('AC-FP-04: $index and $length count all items, not just filtered ones', async () => {
       const context = createEmptyExecutionContext('test')
       context.data.drivers = [
         { name: 'Max', points: 100 },
@@ -149,7 +149,7 @@ describe('Filter Pattern: forEach + if (R-FILTER-41 to R-FILTER-44)', () => {
       const parser = buildProgramParser()
       const program = parser.val(
         `@block/begin forEach=drivers -> driver if={driver.points > 50}
-@utils/log idx=_index len=_length
+@utils/log idx=$index len=$length
 @block/end`,
       )
 
@@ -158,7 +158,7 @@ describe('Filter Pattern: forEach + if (R-FILTER-41 to R-FILTER-44)', () => {
 
       // Only Max (index 0) and Lewis (index 2) pass the filter
       expect(indices).toEqual([0, 2])
-      // _length is always 4 (total drivers count)
+      // $length is always 4 (total drivers count)
       expect(lengths).toEqual([4, 4])
     })
   })

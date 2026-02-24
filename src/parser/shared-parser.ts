@@ -41,6 +41,12 @@ export const identifier = F.regex(/[a-zA-Z_][a-zA-Z0-9_-]*/)
   .filter((s) => s.charAt(s.length - 1) !== '-')
   .filter((s) => !reservedWords.includes(s))
 
+// R-SYSVAR-21: System variable token matches $[a-zA-Z_][a-zA-Z0-9_]*
+// Returns the name WITHOUT the $ prefix (e.g. 'index' for $index)
+export const systemVariable = F.regex(/\$[a-zA-Z_][a-zA-Z0-9_]*/).map(
+  (s) => s.slice(1),
+)
+
 export const numberLiteral = N.number()
 
 export const booleanLiteral: SingleParser<boolean> = C.stringIn([

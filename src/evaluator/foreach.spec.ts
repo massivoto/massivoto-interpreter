@@ -110,7 +110,7 @@ describe('ForEach Execution', () => {
       expect(logged).toContain('Carlos: World')
     })
 
-    it('inner _index shadows outer _index', async () => {
+    it('inner $index shadows outer $index', async () => {
       const context = createEmptyExecutionContext('test')
       context.data.outer = ['a', 'b']
       context.data.inner = ['x', 'y', 'z']
@@ -132,7 +132,7 @@ describe('ForEach Execution', () => {
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=outer -> o
 @block/begin forEach=inner -> i
-@utils/log message=_index
+@utils/log message=$index
 @block/end
 @block/end`)
 
@@ -176,7 +176,7 @@ describe('ForEach Execution', () => {
   })
 
   describe('R-FE-106: System variables scope', () => {
-    it('AC-FE-16: iterator and _index not accessible after loop', async () => {
+    it('AC-FE-16: iterator and $index not accessible after loop', async () => {
       const context = createEmptyExecutionContext('test')
       context.data.items = ['a', 'b']
 
@@ -194,7 +194,7 @@ describe('ForEach Execution', () => {
   })
 
   describe('System Variables (AC-FE-05 to AC-FE-10)', () => {
-    it('AC-FE-05: _index provides 0-based indices', async () => {
+    it('AC-FE-05: $index provides 0-based indices', async () => {
       const context = createEmptyExecutionContext('test')
       context.data.items = ['a', 'b', 'c']
 
@@ -212,7 +212,7 @@ describe('ForEach Execution', () => {
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
-@utils/log message=_index
+@utils/log message=$index
 @block/end`)
 
       const interpreter = new CoreInterpreter(registry)
@@ -221,7 +221,7 @@ describe('ForEach Execution', () => {
       expect(indices).toEqual([0, 1, 2])
     })
 
-    it('AC-FE-06: _count provides 1-based count', async () => {
+    it('AC-FE-06: $count provides 1-based count', async () => {
       const context = createEmptyExecutionContext('test')
       context.data.items = ['a', 'b', 'c']
 
@@ -239,7 +239,7 @@ describe('ForEach Execution', () => {
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
-@utils/log message=_count
+@utils/log message=$count
 @block/end`)
 
       const interpreter = new CoreInterpreter(registry)
@@ -248,7 +248,7 @@ describe('ForEach Execution', () => {
       expect(counts).toEqual([1, 2, 3])
     })
 
-    it('AC-FE-07: _length is constant throughout loop', async () => {
+    it('AC-FE-07: $length is constant throughout loop', async () => {
       const context = createEmptyExecutionContext('test')
       context.data.items = ['a', 'b', 'c']
 
@@ -266,7 +266,7 @@ describe('ForEach Execution', () => {
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
-@utils/log message=_length
+@utils/log message=$length
 @block/end`)
 
       const interpreter = new CoreInterpreter(registry)
@@ -275,7 +275,7 @@ describe('ForEach Execution', () => {
       expect(lengths).toEqual([3, 3, 3])
     })
 
-    it('AC-FE-08: _first is true only on first iteration', async () => {
+    it('AC-FE-08: $first is true only on first iteration', async () => {
       const context = createEmptyExecutionContext('test')
       context.data.items = ['a', 'b', 'c']
 
@@ -293,7 +293,7 @@ describe('ForEach Execution', () => {
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
-@utils/log message=_first
+@utils/log message=$first
 @block/end`)
 
       const interpreter = new CoreInterpreter(registry)
@@ -302,7 +302,7 @@ describe('ForEach Execution', () => {
       expect(firsts).toEqual([true, false, false])
     })
 
-    it('AC-FE-09: _last is true only on last iteration', async () => {
+    it('AC-FE-09: $last is true only on last iteration', async () => {
       const context = createEmptyExecutionContext('test')
       context.data.items = ['a', 'b', 'c']
 
@@ -320,7 +320,7 @@ describe('ForEach Execution', () => {
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
-@utils/log message=_last
+@utils/log message=$last
 @block/end`)
 
       const interpreter = new CoreInterpreter(registry)
@@ -329,7 +329,7 @@ describe('ForEach Execution', () => {
       expect(lasts).toEqual([false, false, true])
     })
 
-    it('AC-FE-10: _odd and _even alternate correctly', async () => {
+    it('AC-FE-10: $odd and $even alternate correctly', async () => {
       const context = createEmptyExecutionContext('test')
       context.data.items = ['a', 'b', 'c', 'd']
 
@@ -358,8 +358,8 @@ describe('ForEach Execution', () => {
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
-@log/odd message=_odd
-@log/even message=_even
+@log/odd message=$odd
+@log/even message=$even
 @block/end`)
 
       const interpreter = new CoreInterpreter(registry)

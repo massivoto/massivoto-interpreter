@@ -11,6 +11,7 @@ import {
   IdentifierNode,
   FileLiteralNode,
   GlobLiteralNode,
+  SystemVariableNode,
 } from '../parser/ast.js'
 import { PipeExpressionNode } from '../parser/args-details/pipe-parser/pipe-parser.js'
 import { PipeRegistry } from '../pipe-registry/index.js'
@@ -61,6 +62,11 @@ export class ExpressionEvaluator {
     switch (expr.type) {
       case 'identifier':
         return this.resolveIdentifier(expr, context)
+
+      // R-SYSVAR-41: System variables resolve from scope chain only (no data fallback)
+      // R-SYSVAR-42: Returns undefined if not in scope (no throw)
+      case 'system-variable':
+        return this.resolveSystemVariable(expr, context)
 
       case 'literal-string':
       case 'literal-number':
@@ -123,6 +129,15 @@ export class ExpressionEvaluator {
 
     // Fall back to data namespace
     return context.data[name]
+  }
+
+  // R-SYSVAR-41: Scope-only lookup for system variables. The scope key is '$' + name.
+  private resolveSystemVariable(
+    expr: SystemVariableNode,
+    context: ExecutionContext,
+  ): any {
+    const scopeKey = '$' + expr.name
+    return lookup(scopeKey, context.scopeChain)
   }
 
   /**

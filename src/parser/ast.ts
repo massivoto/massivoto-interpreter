@@ -102,7 +102,7 @@ export interface ArrayLiteralNode {
 /**
  * Unary and binary can be applied on these
  */
-export type AtomicNode = IdentifierNode | LiteralNode
+export type AtomicNode = IdentifierNode | SystemVariableNode | LiteralNode
 
 export interface IdentifierNode {
   type: 'identifier'
@@ -110,8 +110,17 @@ export interface IdentifierNode {
   value: string
 }
 
+// R-SYSVAR-01: System variable node for $-prefixed variables (e.g. $index, $count)
+// The name field stores the variable name WITHOUT the $ prefix (e.g. 'index' for $index)
+// The scope key uses the $ prefix (e.g. '$index')
+export interface SystemVariableNode {
+  type: 'system-variable'
+  name: string
+}
+
 export type SimpleExpressionNode =
   | IdentifierNode
+  | SystemVariableNode
   | LiteralNode
   | ArrayLiteralNode
   | MemberExpressionNode
@@ -122,6 +131,7 @@ export type SimpleExpressionNode =
 
 export type ExpressionNode =
   | IdentifierNode
+  | SystemVariableNode
   | LiteralNode
   | ArrayLiteralNode
   | MemberExpressionNode
