@@ -129,7 +129,7 @@ The fix requires a hybrid approach: statement-based execution that respects AST 
 
 - [x] AC-BLK-01: Given a block with `if={false}`, when the program executes, then the block body is skipped entirely and variables inside are not set
 
-- [x] AC-BLK-02: Given a block with `forEach={users -> user}` where users is `["Emma", "Carlos"]`, when the program executes, then the block body runs twice with `user` set to "Emma" then "Carlos", and system variables `_index`, `_count`, `_first`, `_last` are correctly set
+- [x] AC-BLK-02: Given a block with `forEach={users -> user}` where users is `["Emma", "Carlos"]`, when the program executes, then the block body runs twice with `user` set to "Emma" then "Carlos", and system variables `$index`, `$count`, `$first`, `$last` are correctly set
 
 - [x] AC-BLK-03: Given a block that sets `scope.temp="value"`, when the block completes, then `temp` is not accessible outside the block (scope isolation)
 

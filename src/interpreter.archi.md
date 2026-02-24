@@ -232,7 +232,7 @@ Interpreter uses:    StatementResult (internal aggregation)
 │    ┌────────────────────────────────────────────────────────────────────────┐   │
 │    │  1. pushScope() ─► create child scope                                  │   │
 │    │  2. Inject system variables (count ALL items, not filtered):           │   │
-│    │     _index, _count, _length, _first, _last, _odd, _even               │   │
+│    │     $index, $count, $length, $first, $last, $odd, $even               │   │
 │    │  3. Inject iterator: write(user, item)                                 │   │
 │    │  4. if= check ─► evaluate condition in current scope                   │   │
 │    │     └─ if falsy: popScope(), continue (skip this item)                │   │

@@ -191,8 +191,8 @@ For a global guard ("skip this entire line"), use `@flow/if` or a conditional bl
 - ✅ R-FILTER-43: Same filter pattern for single instructions with `forEach` + `if`:
   The instruction-level forEach executor must also support per-item `if` filtering.
 
-- ✅ R-FILTER-44: System variables (`_index`, `_count`, `_length`, etc.) count ALL items in the
-  collection, not just filtered ones. `_length` is the original array length. Filtered items
+- ✅ R-FILTER-44: System variables (`$index`, `$count`, `$length`, etc.) count ALL items in the
+  collection, not just filtered ones. `$length` is the original array length. Filtered items
   are skipped but do not alter the counters. This matches Python's `enumerate` behavior.
 
 ### New Reserved Args: retry and collect
@@ -295,7 +295,7 @@ For a global guard ("skip this entire line"), use `@flow/if` or a conditional bl
 ## Open Questions
 
 - [x] Should `if=` be a guard or filter? -> **Filter** (per-item, inside forEach)
-- [x] Should `_index` count filtered items or all items? -> **All items** (matches Python enumerate)
+- [x] Should `$index` count filtered items or all items? -> **All items** (matches Python enumerate)
 - [ ] Should `retry=` support a delay/backoff? -> Deferred (simple counter for now)
 - [ ] Should `collect=` support deduplication? -> Probably not, use a pipe: `{results|unique}`
 - [ ] Should `retry=` and `collect=` be valid on `@block/begin`? -> **No**, instructions only
@@ -325,8 +325,8 @@ For a global guard ("skip this entire line"), use `@flow/if` or a conditional bl
       then block body executes only for Max
 
 - [x] AC-FP-04: Given forEach over 4 drivers with if filtering 2 out,
-      when `_index` is accessed, then values are 0, 1, 2, 3 (not 0, 1 for filtered items only),
-      and `_length` is 4 (total, not filtered count)
+      when `$index` is accessed, then values are 0, 1, 2, 3 (not 0, 1 for filtered items only),
+      and `$length` is 4 (total, not filtered count)
 
 **Retry:**
 

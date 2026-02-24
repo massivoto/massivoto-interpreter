@@ -663,13 +663,13 @@ export class CoreInterpreter implements Interpreter {
    * R-BLK-43: Execute a forEach block using executeStatementList for each iteration.
    *
    * System variables injected into each iteration's scope:
-   * - _index: 0-based index
-   * - _count: 1-based count (== _index + 1)
-   * - _length: total number of items
-   * - _first: true if first iteration
-   * - _last: true if last iteration
-   * - _odd: true if 1-based count is odd (1st, 3rd, 5th...)
-   * - _even: true if 1-based count is even (2nd, 4th, 6th...)
+   * - $index: 0-based index
+   * - $count: 1-based count (== $index + 1)
+   * - $length: total number of items
+   * - $first: true if first iteration
+   * - $last: true if last iteration
+   * - $odd: true if 1-based count is odd (1st, 3rd, 5th...)
+   * - $even: true if 1-based count is even (2nd, 4th, 6th...)
    *
    * The iterator variable (e.g., "user" in "users -> user") is also injected.
    */

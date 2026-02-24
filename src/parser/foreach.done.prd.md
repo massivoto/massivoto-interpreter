@@ -38,8 +38,8 @@ The `forEach` construct enables iteration over collections in OTO programs. It u
 
 ```oto
 @block/begin forEach=users -> user
-  @log/print message={_index + ": " + user.name}
-  @log/print message={_first ? "First!" : ""}
+  @log/print message={$index + ": " + user.name}
+  @log/print message={$first ? "First!" : ""}
 @block/end
 ```
 
@@ -108,16 +108,16 @@ ForEach **requires** the scope chain from [variable-scope.prd.md](../evaluator/v
 **Test:** `npx vitest run packages/runtime/src/interpreter/parser/shared-parser.spec.ts`
 **Progress:** 3/3 (100%)
 
-- ✅ R-FE-01: Document `_` prefix convention: identifiers starting with `_` are reserved for system use
-  - User-defined variables should not start with `_`
-  - Parser does NOT enforce this (allows `_` prefix) - it's a convention
-  - Interpreter may overwrite user's `_index` inside forEach scope
+- ✅ R-FE-01: Document `$` prefix convention: identifiers starting with `$` are reserved for system use
+  - User-defined variables should not start with `$`
+  - System variables are parsed as `SystemVariableNode` (distinct from `IdentifierNode`)
+  - Interpreter injects `$index`, `$count`, etc. inside forEach scope
 
-- ✅ R-FE-02: Verify identifier parser allows `_` prefix: regex `[a-zA-Z_][a-zA-Z0-9_-]*`
-  - `_index`, `_first`, `_myVar` are all valid identifiers
-  - Add test cases for `_` prefixed identifiers
+- ✅ R-FE-02: Verify identifier parser handles `$` prefix: `$identifier` produces `SystemVariableNode`
+  - `$index`, `$first`, `$count` are valid system variable references
+  - Add test cases for `$` prefixed identifiers
 
-- ✅ R-FE-03: Document system variables in DSL specification
+- ✅ R-FE-03: Document system variables in DSL specification (superseded `_` prefix by `$` sigil)
   - Add section to `dsl-0.5.md` listing forEach system variables
   - Note that these are only available inside forEach blocks
 
@@ -225,13 +225,13 @@ ForEach **requires** the scope chain from [variable-scope.prd.md](../evaluator/v
       currentContext.scopeChain.current[iterator.value] = collection[i]
 
       // Inject system variables
-      currentContext.scopeChain.current['_index'] = i
-      currentContext.scopeChain.current['_count'] = i + 1
-      currentContext.scopeChain.current['_length'] = length
-      currentContext.scopeChain.current['_first'] = i === 0
-      currentContext.scopeChain.current['_last'] = i === length - 1
-      currentContext.scopeChain.current['_odd'] = i % 2 === 1
-      currentContext.scopeChain.current['_even'] = i % 2 === 0
+      currentContext.scopeChain.current['$index'] = i
+      currentContext.scopeChain.current['$count'] = i + 1
+      currentContext.scopeChain.current['$length'] = length
+      currentContext.scopeChain.current['$first'] = i === 0
+      currentContext.scopeChain.current['$last'] = i === length - 1
+      currentContext.scopeChain.current['$odd'] = i % 2 === 1
+      currentContext.scopeChain.current['$even'] = i % 2 === 0
 
       // Execute block body
       for (const statement of block.body) {
@@ -250,13 +250,13 @@ ForEach **requires** the scope chain from [variable-scope.prd.md](../evaluator/v
 
 - ✅ R-FE-104: Nested forEach creates nested scope chain
   - Outer iterator and system variables remain accessible via scope chain walk
-  - Inner `_index` shadows outer `_index` (expected behavior)
+  - Inner `$index` shadows outer `$index` (expected behavior)
 
 - ✅ R-FE-105: Data changes inside forEach persist after loop
   - `output=data.result` writes to `context.data`, survives scope pop
 
 - ✅ R-FE-106: System variables are only available inside forEach scope
-  - Accessing `_index` outside forEach returns `undefined` (not an error)
+  - Accessing `$index` outside forEach returns `undefined` (not an error)
 
 ## Dependencies
 
@@ -275,9 +275,9 @@ ForEach **requires** the scope chain from [variable-scope.prd.md](../evaluator/v
 - [x] Can forEach and if coexist on same block? -> **Yes (filter pattern)** - see [reserved-args-precedence.wip.prd.md](./filter-pattern/reserved-args-precedence.wip.prd.md)
 - [x] What happens with empty collection? -> **0 iterations, no error**
 - [x] What happens with non-array? -> **Runtime error**
-- [x] Index variable syntax? -> **Implicit `_index`** (system variable)
+- [x] Index variable syntax? -> **Implicit `$index`** (system variable, `SystemVariableNode`)
 - [ ] Should we support object iteration? -> Deferred to roadmap 1.0
-- [ ] Should accessing `_index` outside forEach throw an error? -> Currently returns undefined
+- [ ] Should accessing `$index` outside forEach throw an error? -> Currently returns undefined
 
 ## Acceptance Criteria
 
@@ -322,19 +322,19 @@ ForEach **requires** the scope chain from [variable-scope.prd.md](../evaluator/v
 ```oto
 # Basic iteration with system variables
 @block/begin forEach=users -> user
-  @log/print message={_count + " of " + _length + ": " + user.name}
+  @log/print message={$count + " of " + $length + ": " + user.name}
 @block/end
 
-# Conditional styling with _first/_last
+# Conditional styling with $first/$last
 @block/begin forEach=items -> item
-  @html/render template={_first ? "<ul><li>" : "<li>"}
+  @html/render template={$first ? "<ul><li>" : "<li>"}
   @html/render template={item.name}
-  @html/render template={_last ? "</li></ul>" : "</li>"}
+  @html/render template={$last ? "</li></ul>" : "</li>"}
 @block/end
 
-# Alternating row colors with _odd/_even
+# Alternating row colors with $odd/$even
 @block/begin forEach=rows -> row
-  @html/render class={_even ? "bg-white" : "bg-gray-100"}
+  @html/render class={$even ? "bg-white" : "bg-gray-100"}
 @block/end
 
 # With pipe expression
@@ -342,11 +342,11 @@ ForEach **requires** the scope chain from [variable-scope.prd.md](../evaluator/v
   @api/call endpoint={"/notify/" + user.id}
 @block/end
 
-# Nested iteration (inner _index shadows outer)
+# Nested iteration (inner $index shadows outer)
 @block/begin forEach=users -> user
-  @utils/set value=_index output=data.userIndex
+  @utils/set value=$index output=data.userIndex
   @block/begin forEach=user.followers -> follower
-    @log/print message={data.userIndex + "." + _index + ": " + follower.name}
+    @log/print message={data.userIndex + "." + $index + ": " + follower.name}
   @block/end
 @block/end
 
@@ -367,13 +367,13 @@ forEach=items -> item
 | scopeChain.current |
 +------------------+
 | item    = items[i] |  <- iterator variable (user-defined name)
-| _index  = 0, 1, 2  |  <- 0-based index
-| _count  = 1, 2, 3  |  <- 1-based count
-| _length = 3        |  <- total items
-| _first  = T, F, F  |  <- first iteration?
-| _last   = F, F, T  |  <- last iteration?
-| _odd    = F, T, F  |  <- odd index?
-| _even   = T, F, T  |  <- even index?
+| $index  = 0, 1, 2  |  <- 0-based index
+| $count  = 1, 2, 3  |  <- 1-based count
+| $length = 3        |  <- total items
+| $first  = T, F, F  |  <- first iteration?
+| $last   = F, F, T  |  <- last iteration?
+| $odd    = F, T, F  |  <- odd index?
+| $even   = T, F, T  |  <- even index?
 +------------------+
 ```
 
