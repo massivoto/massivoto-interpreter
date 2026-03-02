@@ -43,7 +43,6 @@ Blocks enable:
 - Logical grouping of related instructions
 - Scoping for variables (future)
 - Conditional execution of multiple statements (`if=`)
-- Foundation for `@forEach`, `@if`, `@while` control flow (future PRDs)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
