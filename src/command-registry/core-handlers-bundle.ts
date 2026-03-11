@@ -11,6 +11,8 @@
  * - R-GOTO-47: @flow/return handler
  */
 import type { CommandHandler, RegistryBundle } from '@massivoto/kit'
+import type { AiProvider } from '../core-handlers/ai/types.js'
+import type { CrawlAdapter } from '../core-handlers/crawl/adapter/crawl-adapter.js'
 import { GotoHandler } from '../core-handlers/flow/goto.handler.js'
 import { ExitHandler } from '../core-handlers/flow/exit.handler.js'
 import { ReturnHandler } from '../core-handlers/flow/return.handler.js'
@@ -22,6 +24,12 @@ import {
   GridHandler,
   ReverseImageHandler,
   TextHandler,
+  SessionOpenHandler,
+  CrawlPageHandler,
+  CrawlExampleHandler,
+  CrawlExtractHandler,
+  CrawlFollowHandler,
+  CrawlFetchHandler,
 } from '../core-handlers/index.js'
 
 // =============================================================================
@@ -45,11 +53,18 @@ import {
  */
 export class CoreHandlersBundle implements RegistryBundle<CommandHandler<any>> {
   readonly id = 'core'
+  private crawlAdapter?: CrawlAdapter
+  private aiProvider?: AiProvider
+
+  // R-CRAWL-163: optional CrawlAdapter and AI provider for DI
+  constructor(crawlAdapter?: CrawlAdapter, aiProvider?: AiProvider) {
+    this.crawlAdapter = crawlAdapter
+    this.aiProvider = aiProvider
+  }
 
   async load(): Promise<Map<string, CommandHandler<any>>> {
     const handlers = new Map<string, CommandHandler<any>>()
 
-    // Create instances of all core handlers
     const coreHandlers: CommandHandler<any>[] = [
       new LogHandler(),
       new SetHandler(),
@@ -67,7 +82,22 @@ export class CoreHandlersBundle implements RegistryBundle<CommandHandler<any>> {
       new ReverseImageHandler(),
     ]
 
-    // Register each handler by its id
+    // R-CRAWL-162: register crawl handlers when adapter is provided
+    if (this.crawlAdapter) {
+      coreHandlers.push(
+        new SessionOpenHandler(this.crawlAdapter),
+        new CrawlPageHandler(this.crawlAdapter),
+        new CrawlExtractHandler(),
+        new CrawlFollowHandler(),
+        new CrawlFetchHandler(this.crawlAdapter),
+      )
+      if (this.aiProvider) {
+        coreHandlers.push(
+          new CrawlExampleHandler(this.crawlAdapter, this.aiProvider),
+        )
+      }
+    }
+
     for (const handler of coreHandlers) {
       handlers.set(handler.id, handler)
     }

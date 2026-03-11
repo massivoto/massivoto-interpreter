@@ -10,6 +10,8 @@
 import { describe, it, expect } from 'vitest'
 import { CoreHandlersBundle } from './core-handlers-bundle.js'
 import { CommandHandler, createEmptyExecutionContext } from '@massivoto/kit'
+import { MockCrawlAdapter } from '../core-handlers/crawl/adapter/mock-crawl-adapter.js'
+import { DummyAI } from '../core-handlers/crawl/example/dummy-ai.js'
 
 describe('CoreHandlersBundle', () => {
   describe('R-CMD-41: Implements RegistryBundle<CommandHandler>', () => {
@@ -105,6 +107,39 @@ describe('CoreHandlersBundle', () => {
 
       expect(result.success).toBe(true)
       expect(result.value).toBe('test-value')
+    })
+  })
+
+  describe('R-CRAWL-162: crawl handlers registered with adapter', () => {
+    it('should not include crawl handlers when no adapter provided', async () => {
+      const bundle = new CoreHandlersBundle()
+      const handlers = await bundle.load()
+
+      expect(handlers.has('@crawl/session/open')).toBe(false)
+      expect(handlers.has('@crawl/page')).toBe(false)
+    })
+
+    it('should include crawl handlers when adapter is provided', async () => {
+      const adapter = new MockCrawlAdapter()
+      const ai = new DummyAI({ follow: [], extract: [] })
+      const bundle = new CoreHandlersBundle(adapter, ai)
+      const handlers = await bundle.load()
+
+      expect(handlers.has('@crawl/session/open')).toBe(true)
+      expect(handlers.has('@crawl/page')).toBe(true)
+      expect(handlers.has('@crawl/extract')).toBe(true)
+      expect(handlers.has('@crawl/follow')).toBe(true)
+      expect(handlers.has('@crawl/fetch')).toBe(true)
+      expect(handlers.has('@crawl/example')).toBe(true)
+    })
+
+    it('should register @crawl/example only when AI provider is also given', async () => {
+      const adapter = new MockCrawlAdapter()
+      const bundle = new CoreHandlersBundle(adapter)
+      const handlers = await bundle.load()
+
+      expect(handlers.has('@crawl/session/open')).toBe(true)
+      expect(handlers.has('@crawl/example')).toBe(false) // no AI provider
     })
   })
 

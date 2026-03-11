@@ -22,3 +22,14 @@ export { FileSaveHandler } from './file/file-save.handler.js'
 // MCP
 export { FetchHandler } from './mcp/client/fetch/fetch.handler.js'
 export { FileSystemWriterHandler } from './mcp/client/filesystem/filesystem.handler.js'
+
+// Crawl
+export {
+  SessionOpenHandler,
+  CrawlPageHandler,
+  CrawlFollowHandler,
+  CrawlExtractHandler,
+  CrawlExampleHandler,
+  CrawlFetchHandler,
+} from './crawl/index.js'
+export type { CrawlAdapter } from './crawl/index.js'
