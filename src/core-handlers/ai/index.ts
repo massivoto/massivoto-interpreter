@@ -11,6 +11,8 @@ export type {
   TextResult,
   ImageRequest,
   ImageResult,
-} from './types.js'
-export { DEFAULT_AI_PROVIDER } from './types.js'
+  ImageAnalysisRequest,
+  ImageAnalysisResult,
+} from '@massivoto/kit'
+export { DEFAULT_AI_PROVIDER } from '@massivoto/kit'
 export { GeminiProvider } from './providers/index.js'

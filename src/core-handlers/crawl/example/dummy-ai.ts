@@ -1,7 +1,7 @@
 // DummyAI for testing @crawl/example handler
 // Returns predictable LearnedSelectors JSON without making real API calls
 
-import type { AiProvider, TextResult, ImageResult, ImageRequest, ImageAnalysisRequest, ImageAnalysisResult, TextRequest } from '../../ai/types.js'
+import type { AiProvider, TextResult, ImageResult, ImageRequest, ImageAnalysisRequest, ImageAnalysisResult, TextRequest } from '@massivoto/kit'
 import type { LearnedSelectors } from '../adapter/crawl-adapter.js'
 
 export class DummyAI implements AiProvider {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { TextHandler } from './text.handler.js'
-import type { AiProvider, TextResult } from './types.js'
+import type { AiProvider, TextResult } from '@massivoto/kit'
 import { createEmptyExecutionContext } from '@massivoto/kit'
 
 /**

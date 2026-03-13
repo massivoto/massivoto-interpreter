@@ -10,8 +10,8 @@
  * R-RIMG-44: System prompt for reverse-prompting with {{variation}}
  * R-RIMG-45: Returns generated prompt as ActionResult.value
  */
-import type { AiProvider, AiProviderName } from '../types.js'
-import { DEFAULT_AI_PROVIDER } from '../types.js'
+import type { AiProvider, AiProviderName } from '@massivoto/kit'
+import { DEFAULT_AI_PROVIDER } from '@massivoto/kit'
 import { GEMINI_MODEL_TIERS, resolveModel } from '../defaults.js'
 import { GeminiProvider } from '../providers/gemini.provider.js'
 import { ActionResult, ExecutionContext } from '@massivoto/kit'

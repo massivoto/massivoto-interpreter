@@ -10,8 +10,8 @@
  * R-GEN-24: Call provider.generateImage() and return base64 as ActionResult.value
  * R-GEN-25: API key from context.env or process.env
  */
-import type { AiProvider, AiProviderName, ImageRequest } from '../types.js'
-import { DEFAULT_AI_PROVIDER } from '../types.js'
+import type { AiProvider, AiProviderName, ImageRequest } from '@massivoto/kit'
+import { DEFAULT_AI_PROVIDER } from '@massivoto/kit'
 import { AI_IMAGE_DEFAULTS, resolveModel } from '../defaults.js'
 import { GeminiProvider } from '../providers/gemini.provider.js'
 import { ActionResult, ExecutionContext } from '@massivoto/kit'

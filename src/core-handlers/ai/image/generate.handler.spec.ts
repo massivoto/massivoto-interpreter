@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { GenerateImageHandler } from './generate.handler.js'
-import type { AiProvider, ImageResult } from '../types.js'
+import type { AiProvider, ImageResult } from '@massivoto/kit'
 import { createEmptyExecutionContext } from '@massivoto/kit'
 
 /**

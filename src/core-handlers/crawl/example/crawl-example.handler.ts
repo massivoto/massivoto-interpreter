@@ -2,7 +2,7 @@
 
 import { ActionResult, ExecutionContext } from '@massivoto/kit'
 import { BaseCommandHandler } from '../../../handlers/index.js'
-import type { AiProvider } from '../../ai/types.js'
+import type { AiProvider } from '@massivoto/kit'
 import type { CrawlAdapter, LearnedSelectors } from '../adapter/crawl-adapter.js'
 import type { CrawlSession } from '../session/crawl-session.js'
 

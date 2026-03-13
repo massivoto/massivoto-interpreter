@@ -13,7 +13,7 @@ import type {
   ImageResult,
   ImageAnalysisRequest,
   ImageAnalysisResult,
-} from '../types.js'
+} from '@massivoto/kit'
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta'
 const DEFAULT_TEXT_MODEL = 'gemini-1.5-pro'

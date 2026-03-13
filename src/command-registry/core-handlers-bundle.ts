@@ -11,7 +11,7 @@
  * - R-GOTO-47: @flow/return handler
  */
 import type { CommandHandler, RegistryBundle } from '@massivoto/kit'
-import type { AiProvider } from '../core-handlers/ai/types.js'
+import type { AiProvider } from '@massivoto/kit'
 import type { CrawlAdapter } from '../core-handlers/crawl/adapter/crawl-adapter.js'
 import { GotoHandler } from '../core-handlers/flow/goto.handler.js'
 import { ExitHandler } from '../core-handlers/flow/exit.handler.js'

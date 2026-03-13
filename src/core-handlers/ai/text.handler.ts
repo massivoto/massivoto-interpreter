@@ -15,10 +15,10 @@
  * @ai/text provider="gemini" model="gemini-pro" prompt="Summarize {doc}" temperature=0.5 output=summary
  * ```
  */
-import type { AiProvider, AiProviderName } from './types.js'
-import { DEFAULT_AI_PROVIDER } from './types.js'
+import type { AiProvider, AiProviderName } from '@massivoto/kit'
+import { DEFAULT_AI_PROVIDER } from '@massivoto/kit'
 import { GeminiProvider } from './providers/gemini.provider.js'
-import { ActionResult, ExecutionContext } from '@massivoto/kit'
+import type { ActionResult, ExecutionContext } from '@massivoto/kit'
 import { BaseCommandHandler } from '../../handlers/index.js'
 
 const SUPPORTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { ReverseImageHandler } from './reverse-image.handler.js'
-import type { AiProvider, ImageAnalysisResult } from '../types.js'
+import type { AiProvider, ImageAnalysisResult } from '@massivoto/kit'
 import { createEmptyExecutionContext } from '@massivoto/kit'
 import type { OtoFile } from '../../../utils/file-utils.js'
 
