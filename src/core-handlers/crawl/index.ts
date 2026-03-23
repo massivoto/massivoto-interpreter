@@ -6,6 +6,8 @@ export { CrawlFollowHandler } from './follow/crawl-follow.handler.js'
 export { CrawlExtractHandler } from './extract/crawl-extract.handler.js'
 export { CrawlExampleHandler } from './example/crawl-example.handler.js'
 export { CrawlFetchHandler } from './fetch/crawl-fetch.handler.js'
+export { CrawlDirectoryHandler } from './directory/crawl-directory.handler.js'
+export type { CrawlDirectoryResult } from './directory/crawl-directory.handler.js'
 
 export { CrawlSession } from './session/crawl-session.js'
 export { InMemoryCrawlQueue } from './adapter/in-memory-crawl-queue.js'

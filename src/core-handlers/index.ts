@@ -31,5 +31,6 @@ export {
   CrawlExtractHandler,
   CrawlExampleHandler,
   CrawlFetchHandler,
+  CrawlDirectoryHandler,
 } from './crawl/index.js'
-export type { CrawlAdapter } from './crawl/index.js'
+export type { CrawlAdapter, CrawlDirectoryResult } from './crawl/index.js'

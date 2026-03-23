@@ -30,6 +30,7 @@ import {
   CrawlExtractHandler,
   CrawlFollowHandler,
   CrawlFetchHandler,
+  CrawlDirectoryHandler,
 } from '../core-handlers/index.js'
 
 // =============================================================================
@@ -90,6 +91,7 @@ export class CoreHandlersBundle implements RegistryBundle<CommandHandler<any>> {
         new CrawlExtractHandler(),
         new CrawlFollowHandler(),
         new CrawlFetchHandler(this.crawlAdapter),
+        new CrawlDirectoryHandler(this.crawlAdapter),
       )
       if (this.aiProvider) {
         coreHandlers.push(
