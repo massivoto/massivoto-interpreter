@@ -8,23 +8,19 @@
  * R-AI-12: Resolve {expressions} in prompt (done by interpreter before handler)
  * R-AI-13: Store generated text in output variable via ExecutionContext
  * R-AI-14: Return cost metadata (tokens used) in instruction result
- *
- * @example
- * ```oto
- * @ai/text prompt="Write a tagline for {product}" output=tagline
- * @ai/text provider="gemini" model="gemini-pro" prompt="Summarize {doc}" temperature=0.5 output=summary
- * ```
  */
 import type { AiProvider, AiProviderName } from '@massivoto/kit'
-import { DEFAULT_AI_PROVIDER } from '@massivoto/kit'
-import { GeminiProvider } from './providers/gemini.provider.js'
+import { resolveProvider } from '@massivoto/auth-domain'
+import { createAiProvider } from './providers/create-ai-provider.js'
 import type { ActionResult, ExecutionContext } from '@massivoto/kit'
 import { BaseCommandHandler } from '../../handlers/index.js'
 
-const SUPPORTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']
+// R-AIC-42: TextHandler accepts gemini (openai/anthropic future)
+const TEXT_ACCEPTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']
 
 export class TextHandler extends BaseCommandHandler<string> {
   readonly type = 'command' as const
+  override readonly acceptedProviders = TEXT_ACCEPTED_PROVIDERS
 
   private providers: Map<string, AiProvider> = new Map()
 
@@ -32,9 +28,7 @@ export class TextHandler extends BaseCommandHandler<string> {
     super('@ai/text')
   }
 
-  /**
-   * Set a provider for testing or custom implementations.
-   */
+  // R-AIC-63: test hook remains for unit testing
   setProvider(name: string, provider: AiProvider): void {
     this.providers.set(name, provider)
   }
@@ -50,32 +44,14 @@ export class TextHandler extends BaseCommandHandler<string> {
     }
 
     // R-AI-11: Get optional arguments with defaults
-    const providerName: string = args.provider ?? DEFAULT_AI_PROVIDER
     const temperature: number = args.temperature ?? 0.7
     const maxTokens: number | undefined = args.maxTokens
     const system: string | undefined = args.system
     const model: string | undefined = args.model
 
-    // AC-05: Validate provider
-    if (!SUPPORTED_PROVIDERS.includes(providerName as AiProviderName)) {
-      const msg = `Unknown provider "${providerName}". Valid options: ${SUPPORTED_PROVIDERS.join(', ')}`
-      return this.handleFailure(msg, msg)
-    }
-
-    // R-AI-33: Get API key from environment
-    const apiKey = this.getApiKey(providerName, context)
-    if (!apiKey) {
-      const msg = `Missing GEMINI_API_KEY environment variable. Copy env.dist to .env and add your API key.`
-      return this.handleFailure(msg, msg)
-    }
-
     try {
-      // Get or create provider
-      let provider = this.providers.get(providerName)
-      if (!provider) {
-        provider = this.createProvider(providerName, apiKey)
-        this.providers.set(providerName, provider)
-      }
+      // R-AIC-43: Use centralized resolution instead of duplicated getApiKey/createProvider
+      const provider = this.getOrCreateProvider(args.provider, context)
 
       // R-AI-12: Prompt expression resolution is done by interpreter before handler
       const result = await provider.generateText({
@@ -103,29 +79,61 @@ export class TextHandler extends BaseCommandHandler<string> {
     }
   }
 
-  private getApiKey(
-    providerName: string,
+  private getOrCreateProvider(
+    providerArg: string | undefined,
     context: ExecutionContext,
-  ): string | undefined {
-    switch (providerName) {
-      case 'gemini':
-        return context.env?.GEMINI_API_KEY || process.env.GEMINI_API_KEY
-      case 'openai':
-        return context.env?.OPENAI_API_KEY || process.env.OPENAI_API_KEY
-      case 'anthropic':
-        return context.env?.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
-      default:
-        return undefined
+  ): AiProvider {
+    // If a test-injected provider exists, use it
+    const resolvedName = providerArg ?? this.resolveProviderName(context)
+    const cached = this.providers.get(resolvedName)
+    if (cached) return cached
+
+    // Use centralized resolution from auth-domain
+    if (!context.aiConfig) {
+      // Fallback for backward compatibility: build config from context.env
+      return this.fallbackCreateProvider(resolvedName, context)
     }
+
+    const resolved = resolveProvider(context.aiConfig, this.acceptedProviders!)
+    const provider = createAiProvider(resolved.name, resolved.apiKey)
+    this.providers.set(resolved.name, provider)
+    return provider
   }
 
-  private createProvider(providerName: string, apiKey: string): AiProvider {
-    switch (providerName) {
-      case 'gemini':
-        return new GeminiProvider(apiKey)
-      default:
-        // OpenAI and Anthropic are not yet implemented (v1.0)
-        throw new Error(`Provider "${providerName}" is not yet implemented`)
+  private resolveProviderName(context: ExecutionContext): string {
+    if (context.aiConfig && context.aiConfig.providers.length > 0) {
+      const resolved = resolveProvider(context.aiConfig, this.acceptedProviders!)
+      return resolved.name
     }
+    return 'gemini'
+  }
+
+  private fallbackCreateProvider(
+    providerName: string,
+    context: ExecutionContext,
+  ): AiProvider {
+    const validProviders: AiProviderName[] = ['gemini', 'openai', 'anthropic']
+    if (!validProviders.includes(providerName as AiProviderName)) {
+      throw new Error(
+        `Unknown provider "${providerName}". Valid options: ${validProviders.join(', ')}`,
+      )
+    }
+
+    const keyMap: Record<string, string> = {
+      gemini: 'GEMINI_API_KEY',
+      openai: 'OPENAI_API_KEY',
+      anthropic: 'ANTHROPIC_API_KEY',
+    }
+    const keyName = keyMap[providerName]
+    const apiKey = context.env?.[keyName] || process.env[keyName]
+    if (!apiKey) {
+      throw new Error(
+        `Missing ${keyName} environment variable. Copy env.dist to .env and add your API key.`,
+      )
+    }
+
+    const provider = createAiProvider(providerName as AiProviderName, apiKey)
+    this.providers.set(providerName, provider)
+    return provider
   }
 }

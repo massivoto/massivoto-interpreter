@@ -22,16 +22,19 @@
     "clean": "rimraf dist && rimraf tsconfig.tsbuildinfo",
     "prepublishOnly": "npm run build",
     "test": "npm run build && vitest run",
+    "integration": "npm run build && vitest run --config vitest.integration.config.ts",
     "prettier": "prettier --write \"src/**/*.ts\" \"./*.json\""
   },
   "dependencies": {
     "@masala/parser": "^2.0.0",
+    "@massivoto/auth-domain": "file:../massivoto-platform/packages/auth-domain",
     "@massivoto/kit": "file:../massivoto-platform/packages/kit",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "cheerio": "^1.2.0",
     "fast-glob": "^3.3.3",
     "lodash.set": "^4.3.2",
     "turndown": "^7.2.2",
+    "dotenv": "^17.3.1",
     "zod": "^3.24.0"
   },
   "devDependencies": {

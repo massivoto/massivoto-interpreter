@@ -12,16 +12,19 @@
  */
 import type { AiProvider, AiProviderName } from '@massivoto/kit'
 import { DEFAULT_AI_PROVIDER } from '@massivoto/kit'
-import { GEMINI_MODEL_TIERS, resolveModel } from '../defaults.js'
-import { GeminiProvider } from '../providers/gemini.provider.js'
+import { resolveProvider } from '@massivoto/auth-domain'
+import { resolveModel } from '../defaults.js'
+import { createAiProvider } from '../providers/create-ai-provider.js'
 import { ActionResult, ExecutionContext } from '@massivoto/kit'
 import { BaseCommandHandler } from '../../../handlers/index.js'
 import { toImageData } from '../../../utils/file-utils.js'
 
-const SUPPORTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']
+// R-AIC-42: ReverseImageHandler accepts gemini (openai/anthropic future)
+const REVERSE_ACCEPTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']
 
 export class ReverseImageHandler extends BaseCommandHandler<string> {
   readonly type = 'command' as const
+  override readonly acceptedProviders = REVERSE_ACCEPTED_PROVIDERS
 
   private providers: Map<string, AiProvider> = new Map()
 
@@ -29,6 +32,7 @@ export class ReverseImageHandler extends BaseCommandHandler<string> {
     super('@ai/prompt/reverseImage')
   }
 
+  // R-AIC-63: test hook remains
   setProvider(name: string, provider: AiProvider): void {
     this.providers.set(name, provider)
   }
@@ -77,24 +81,9 @@ export class ReverseImageHandler extends BaseCommandHandler<string> {
       return this.handleSuccess('Reverse-prompt generated (dummy mode)', dummyPrompt)
     }
 
-    // Validate provider
-    if (!SUPPORTED_PROVIDERS.includes(providerName as AiProviderName)) {
-      const msg = `Unknown provider "${providerName}". Valid options: ${SUPPORTED_PROVIDERS.join(', ')}`
-      return this.handleFailure(msg, msg)
-    }
-
-    const apiKey = this.getApiKey(providerName, context)
-    if (!apiKey) {
-      const msg = 'Missing GEMINI_API_KEY environment variable. Copy env.dist to .env and add your API key.'
-      return this.handleFailure(msg, msg)
-    }
-
     try {
-      let provider = this.providers.get(providerName)
-      if (!provider) {
-        provider = this.createProvider(providerName, apiKey)
-        this.providers.set(providerName, provider)
-      }
+      // R-AIC-43: Use centralized resolution
+      const provider = this.getOrCreateProvider(providerName as AiProviderName, context)
 
       // R-RIMG-61 to R-RIMG-63: Model tier resolution (shared from ai/defaults.ts)
       const resolvedModel = resolveModel(modelArg, providerName)
@@ -138,28 +127,49 @@ export class ReverseImageHandler extends BaseCommandHandler<string> {
     return prompt
   }
 
-  private getApiKey(
-    providerName: string,
+  private getOrCreateProvider(
+    providerName: AiProviderName,
     context: ExecutionContext,
-  ): string | undefined {
-    switch (providerName) {
-      case 'gemini':
-        return context.env?.GEMINI_API_KEY || process.env.GEMINI_API_KEY
-      case 'openai':
-        return context.env?.OPENAI_API_KEY || process.env.OPENAI_API_KEY
-      case 'anthropic':
-        return context.env?.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
-      default:
-        return undefined
+  ): AiProvider {
+    const cached = this.providers.get(providerName)
+    if (cached) return cached
+
+    if (context.aiConfig) {
+      const resolved = resolveProvider(context.aiConfig, this.acceptedProviders!)
+      const provider = createAiProvider(resolved.name, resolved.apiKey)
+      this.providers.set(resolved.name, provider)
+      return provider
     }
+
+    return this.fallbackCreateProvider(providerName, context)
   }
 
-  private createProvider(providerName: string, apiKey: string): AiProvider {
-    switch (providerName) {
-      case 'gemini':
-        return new GeminiProvider(apiKey)
-      default:
-        throw new Error(`Provider "${providerName}" is not yet implemented`)
+  private fallbackCreateProvider(
+    providerName: AiProviderName,
+    context: ExecutionContext,
+  ): AiProvider {
+    const validProviders: AiProviderName[] = ['gemini', 'openai', 'anthropic']
+    if (!validProviders.includes(providerName)) {
+      throw new Error(
+        `Unknown provider "${providerName}". Valid options: ${validProviders.join(', ')}`,
+      )
     }
+
+    const keyMap: Record<string, string> = {
+      gemini: 'GEMINI_API_KEY',
+      openai: 'OPENAI_API_KEY',
+      anthropic: 'ANTHROPIC_API_KEY',
+    }
+    const keyName = keyMap[providerName]
+    const apiKey = context.env?.[keyName] || process.env[keyName]
+    if (!apiKey) {
+      throw new Error(
+        `Missing ${keyName} environment variable. Copy env.dist to .env and add your API key.`,
+      )
+    }
+
+    const provider = createAiProvider(providerName, apiKey)
+    this.providers.set(providerName, provider)
+    return provider
   }
 }
