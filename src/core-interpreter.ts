@@ -219,7 +219,7 @@ export class CoreInterpreter implements Interpreter {
 
     const hasOutput = !!(instruction.output && result.success)
     const hasCollect = !!(instruction.collect && result.success)
-    const outputKey = instruction.output?.value
+    const outputKey = instruction.output?.name
 
     if (hasOutput || hasCollect) {
       outcome.value = result.value
@@ -469,7 +469,7 @@ export class CoreInterpreter implements Interpreter {
 
         // R-FILTER-101: collect without forEach wraps single result in array
         if (statement.collect && result.log?.value !== undefined) {
-          const collectKey = statement.collect.value
+          const collectKey = statement.collect.name
           const target = parseOutputTarget(collectKey)
           if (target.namespace === 'scope') {
             write(target.key, [result.log.value], currentContext.scopeChain)
@@ -702,7 +702,7 @@ export class CoreInterpreter implements Interpreter {
       }
     }
 
-    const iteratorName = forEach.iterator.value
+    const iteratorName = forEach.iterator.name
     const length = iterable.length
     let currentContext = context
 
@@ -785,7 +785,7 @@ export class CoreInterpreter implements Interpreter {
       throw new Error(`Cannot iterate over ${type}. forEach requires an array.`)
     }
 
-    const collectKey = instruction.collect?.value
+    const collectKey = instruction.collect?.name
     const collected: unknown[] = []
 
     if (iterable.length === 0) {
@@ -808,7 +808,7 @@ export class CoreInterpreter implements Interpreter {
       }
     }
 
-    const iteratorName = forEach.iterator.value
+    const iteratorName = forEach.iterator.name
     const length = iterable.length
     let currentContext = context
 

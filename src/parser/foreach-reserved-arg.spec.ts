@@ -26,8 +26,8 @@ describe('ForEach Reserved Argument', () => {
       expect(instr.forEach).toBeDefined()
       const forEach = instr.forEach as ForEachArgNode
       expect(forEach.type).toBe('forEach-arg')
-      expect(forEach.iterable).toEqual({ type: 'identifier', value: 'users' })
-      expect(forEach.iterator).toEqual({ type: 'bare-string', value: 'user' })
+      expect(forEach.iterable).toEqual({ type: 'reference', path: ['users'] })
+      expect(forEach.iterator).toEqual({ type: 'binding', name: 'user' })
     })
 
     it('parses forEach=data.users -> user (member expression iterable)', () => {
@@ -37,7 +37,7 @@ describe('ForEach Reserved Argument', () => {
 
       expect(instr.forEach).toBeDefined()
       const forEach = instr.forEach as ForEachArgNode
-      expect(forEach.iterable.type).toBe('member')
+      expect(forEach.iterable).toEqual({ type: 'reference', path: ['data', 'users'] })
     })
 
     it('parses forEach={users|filter:active} -> user (pipe expression iterable)', () => {
@@ -109,7 +109,7 @@ describe('ForEach Reserved Argument', () => {
       const instr = parsing.value as InstructionNode
 
       expect(instr.forEach).toBeDefined()
-      expect((instr.forEach as ForEachArgNode).iterator.value).toBe('_item')
+      expect((instr.forEach as ForEachArgNode).iterator.name).toBe('_item')
     })
   })
 
@@ -121,8 +121,8 @@ describe('ForEach Reserved Argument', () => {
 
       expect(instr.forEach).toEqual({
         type: 'forEach-arg',
-        iterable: { type: 'identifier', value: 'users' },
-        iterator: { type: 'bare-string', value: 'user' },
+        iterable: { type: 'reference', path: ['users'] },
+        iterator: { type: 'binding', name: 'user' },
       })
     })
 

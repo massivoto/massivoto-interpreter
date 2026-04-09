@@ -46,6 +46,7 @@
 export { CoreInterpreter } from './core-interpreter.js'
 export { parseProgram, buildProgramParser } from './parser/program-parser.js'
 export { ProgramNode } from './parser/ast.js'
+export type { BindingNode, ReferenceNode } from './parser/ast.js'
 
 // Expression Evaluator
 export { ExpressionEvaluator } from './evaluator/evaluators.js'

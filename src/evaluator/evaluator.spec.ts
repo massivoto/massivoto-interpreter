@@ -1687,9 +1687,10 @@ describe('ExpressionEvaluator - Store Access', () => {
 })
 
 // ============================================================================
-// PIPE EXPRESSION EVALUATION (R-PIPE-01 to R-PIPE-83)
+// REFERENCE AND BINDING NODE EVALUATION (R-IDROLE2-13, R-IDROLE2-14)
 // ============================================================================
 
+import { BindingNode, ReferenceNode } from '../parser/ast.js'
 import { PipeExpressionNode } from '../parser/args-details/pipe-parser/pipe-parser.js'
 import { PipeRegistry, CorePipesBundle } from '../pipe-registry/index.js'
 import {
@@ -1699,6 +1700,93 @@ import {
   pushScope,
   write,
 } from '@massivoto/kit'
+
+describe('ExpressionEvaluator - ReferenceNode (R-IDROLE2-13)', () => {
+  it('AC-REF-04: resolves simple reference from scope chain', async () => {
+    const context = fromPartialContext({
+      data: {},
+    })
+    const scopeChain = pushScope(createEmptyScopeChain())
+    write('bands', ['Radiohead', 'Daft Punk', 'Metallica'], scopeChain)
+    context.scopeChain = scopeChain
+
+    const expr: ReferenceNode = { type: 'reference', path: ['bands'] }
+    const result = await evaluator.evaluate(expr, context)
+
+    expect(result).toEqual(['Radiohead', 'Daft Punk', 'Metallica'])
+  })
+
+  it('AC-REF-05: resolves reference with path navigation', async () => {
+    const context = fromPartialContext({
+      data: {},
+    })
+    const scopeChain = pushScope(createEmptyScopeChain())
+    write('festival', { stages: { main: 'Radiohead', tent: 'MGMT' } }, scopeChain)
+    context.scopeChain = scopeChain
+
+    const expr: ReferenceNode = { type: 'reference', path: ['festival', 'stages'] }
+    const result = await evaluator.evaluate(expr, context)
+
+    expect(result).toEqual({ main: 'Radiohead', tent: 'MGMT' })
+  })
+
+  it('AC-REF-06: returns undefined for missing reference', async () => {
+    const context = fromPartialContext({
+      data: {},
+    })
+
+    const expr: ReferenceNode = { type: 'reference', path: ['afterParty'] }
+    const result = await evaluator.evaluate(expr, context)
+
+    expect(result).toBeUndefined()
+  })
+
+  it('falls back to data namespace when not in scope', async () => {
+    const context = fromPartialContext({
+      data: { users: ['Alice', 'Bob'] },
+    })
+
+    const expr: ReferenceNode = { type: 'reference', path: ['users'] }
+    const result = await evaluator.evaluate(expr, context)
+
+    expect(result).toEqual(['Alice', 'Bob'])
+  })
+
+  it('returns undefined for missing path segment', async () => {
+    const context = fromPartialContext({
+      data: { festival: { stages: {} } },
+    })
+
+    const expr: ReferenceNode = { type: 'reference', path: ['festival', 'missing', 'deep'] }
+    const result = await evaluator.evaluate(expr, context)
+
+    expect(result).toBeUndefined()
+  })
+})
+
+describe('ExpressionEvaluator - BindingNode (R-IDROLE2-14)', () => {
+  it('AC-BIND-06: throws EvaluationError when evaluated', async () => {
+    const context = fromPartialContext({ data: {} })
+    const expr: BindingNode = { type: 'binding', name: 'vipArea' }
+
+    await expect(evaluator.evaluate(expr as any, context)).rejects.toThrow(
+      'BindingNode should not be evaluated',
+    )
+  })
+
+  it('throws EvaluationError instance', async () => {
+    const context = fromPartialContext({ data: {} })
+    const expr: BindingNode = { type: 'binding', name: 'test' }
+
+    try {
+      await evaluator.evaluate(expr as any, context)
+      expect.fail('Should have thrown')
+    } catch (e) {
+      expect(e).toBeInstanceOf(EvaluationError)
+      expect((e as EvaluationError).nodeType).toBe('binding')
+    }
+  })
+})
 
 describe('ExpressionEvaluator - Pipe Expressions', () => {
   // Create evaluator with pipe registry

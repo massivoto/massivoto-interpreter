@@ -44,7 +44,7 @@ describe('Filter Pattern Edge Cases', () => {
 
       expect(instr.retry).toEqual({ type: 'literal-number', value: 3 })
       expect(instr.condition).toBeDefined()
-      expect(instr.collect).toEqual({ type: 'identifier', value: 'r' })
+      expect(instr.collect).toEqual({ type: 'binding', name: 'r' })
       expect(instr.forEach).toBeDefined()
     })
 
@@ -57,7 +57,7 @@ describe('Filter Pattern Edge Cases', () => {
 
       expect(instr.retry).toEqual({ type: 'literal-number', value: 3 })
       expect(instr.condition).toBeDefined()
-      expect(instr.collect).toEqual({ type: 'identifier', value: 'r' })
+      expect(instr.collect).toEqual({ type: 'binding', name: 'r' })
       expect(instr.forEach).toBeDefined()
     })
   })

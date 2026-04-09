@@ -19,8 +19,8 @@ describe('ForEach Block Integration', () => {
 
       const forEach = block.forEach as ForEachArgNode
       expect(forEach.type).toBe('forEach-arg')
-      expect(forEach.iterable).toEqual({ type: 'identifier', value: 'users' })
-      expect(forEach.iterator).toEqual({ type: 'bare-string', value: 'user' })
+      expect(forEach.iterable).toEqual({ type: 'reference', path: ['users'] })
+      expect(forEach.iterator).toEqual({ type: 'binding', name: 'user' })
     })
 
     it('parses block with forEach and name', () => {
@@ -42,7 +42,7 @@ describe('ForEach Block Integration', () => {
 
       const block = result.body[0] as BlockNode
       expect(block.forEach).toBeDefined()
-      expect(block.forEach?.iterable.type).toBe('member')
+      expect(block.forEach?.iterable).toEqual({ type: 'reference', path: ['data', 'users'] })
     })
 
     it('parses block with forEach using pipe expression', () => {
@@ -82,8 +82,8 @@ describe('ForEach Block Integration', () => {
       expect(block.condition).toBeDefined()
 
       const forEach = block.forEach as ForEachArgNode
-      expect(forEach.iterable).toEqual({ type: 'identifier', value: 'users' })
-      expect(forEach.iterator).toEqual({ type: 'bare-string', value: 'user' })
+      expect(forEach.iterable).toEqual({ type: 'reference', path: ['users'] })
+      expect(forEach.iterator).toEqual({ type: 'binding', name: 'user' })
       expect(block.condition?.type).toBe('member')
     })
 
@@ -124,12 +124,12 @@ describe('ForEach Block Integration', () => {
 
       const outer = result.body[0] as BlockNode
       expect(outer.forEach).toBeDefined()
-      expect(outer.forEach?.iterator.value).toBe('user')
+      expect(outer.forEach?.iterator.name).toBe('user')
 
       // Inner block is the second statement in outer block body
       const inner = outer.body[1] as BlockNode
       expect(inner.forEach).toBeDefined()
-      expect(inner.forEach?.iterator.value).toBe('tweet')
+      expect(inner.forEach?.iterator.name).toBe('tweet')
     })
 
     it('parses forEach inside conditional block', () => {

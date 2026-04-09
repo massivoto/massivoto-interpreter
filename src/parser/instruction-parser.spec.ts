@@ -25,8 +25,8 @@ describe('Genlex for instruction parser', () => {
         },
       ],
       output: {
-        type: 'identifier',
-        value: 'out1',
+        type: 'binding',
+        name: 'out1',
       },
     })
   })

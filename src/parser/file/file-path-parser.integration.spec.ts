@@ -54,8 +54,8 @@ describe('File path integration: full command parsing', () => {
       } satisfies FileLiteralNode)
 
       expect(instruction.output).toEqual({
-        type: 'identifier',
-        value: 'description',
+        type: 'binding',
+        name: 'description',
       })
     })
 

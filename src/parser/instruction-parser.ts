@@ -16,6 +16,7 @@ import {
 import {
   ArgumentNode,
   ActionNode,
+  BindingNode,
   CollectArgNode,
   ExpressionNode,
   ForEachArgNode,
@@ -105,13 +106,14 @@ export function createInstructionGrammar(
   const expression = createExpressionWithPipe(tokens)
 
   // Dotted path parser: identifier(.identifier)* -> joined as "scope.user.profile"
-  // Used for output targets like output=scope.user
+  // Used for output/collect targets like output=scope.user
+  // Produces BindingNode (L-value: where to WRITE in scope)
   const dottedPath = IDENTIFIER.then(DOT.drop().then(IDENTIFIER).optrep()).map(
     (tuple) => {
       const first = tuple.first() as IdentifierNode
       const rest = tuple.array().slice(1) as IdentifierNode[]
       const fullPath = [first.value, ...rest.map((id) => id.value)].join('.')
-      return { type: 'identifier' as const, value: fullPath }
+      return { type: 'binding' as const, name: fullPath }
     },
   )
 
@@ -121,7 +123,7 @@ export function createInstructionGrammar(
     .then(dottedPath)
     .map((tuple) => ({
       type: 'output-arg' as const,
-      target: tuple.single() as IdentifierNode,
+      target: tuple.single() as BindingNode,
     }))
 
   // if=expression - IF_KEY is dropped, expression becomes the condition
@@ -132,10 +134,9 @@ export function createInstructionGrammar(
       condition: tuple.single() as ExpressionNode,
     }))
 
-  // forEach=mapperExpression - FOREACH_KEY is dropped, must be a mapper expression
-  // e.g. forEach=users -> user, forEach={users|filter:active} -> user
-  // Use filter() to reject non-mapper expressions instead of throwing in map()
-  const forEachArg: SingleParser<ForEachArgNode> = FOREACH_KEY.drop()
+  // Path A: forEach=reference -> binding (simple/dotted mapper)
+  // e.g. forEach=users -> user, forEach=data.users -> user
+  const forEachMapperPath: SingleParser<ForEachArgNode> = FOREACH_KEY.drop()
     .then(expression)
     .filter((tuple) => {
       const expr = tuple.single() as ExpressionNode
@@ -149,6 +150,26 @@ export function createInstructionGrammar(
         iterator: mapperExpr.target,
       }
     })
+
+  // Path B: forEach=complexExpression -> binding (pipe, array, braced expressions)
+  // e.g. forEach={users|filter:active} -> user, forEach=[1,2,3] -> num
+  // The mapper parser rejects complex sources, so ARROW and binding are parsed here
+  const forEachComplexPath: SingleParser<ForEachArgNode> = FOREACH_KEY.drop()
+    .then(expression)
+    .then(tokens.ARROW.drop())
+    .then(IDENTIFIER)
+    .map((tuple) => {
+      const items = tuple.array()
+      const iterableExpr = items[0] as ExpressionNode
+      const iteratorId = items[1] as IdentifierNode
+      return {
+        type: 'forEach-arg' as const,
+        iterable: iterableExpr,
+        iterator: { type: 'binding' as const, name: iteratorId.value },
+      }
+    })
+
+  const forEachArg: SingleParser<ForEachArgNode> = F.try(forEachMapperPath).or(forEachComplexPath)
 
   // label="name" - LABEL_KEY is dropped, must be a string literal matching identifier pattern
   // R-GOTO-03: Must be a simple string literal (not expression, not identifier)
@@ -186,7 +207,7 @@ export function createInstructionGrammar(
     .then(dottedPath)
     .map((tuple) => ({
       type: 'collect-arg' as const,
-      target: tuple.single() as IdentifierNode,
+      target: tuple.single() as BindingNode,
     }))
 
   // Combined reserved arg parser with backtracking
@@ -214,12 +235,12 @@ export function createInstructionGrammar(
 
     // Separate reserved args from regular args
     const regularArgs: ArgumentNode[] = []
-    let output: IdentifierNode | undefined
+    let output: BindingNode | undefined
     let condition: ExpressionNode | undefined
     let forEach: ForEachArgNode | undefined
     let label: string | undefined
     let retry: ExpressionNode | undefined
-    let collect: IdentifierNode | undefined
+    let collect: BindingNode | undefined
 
     for (const arg of allArgs) {
       if (arg.type === 'output-arg') {

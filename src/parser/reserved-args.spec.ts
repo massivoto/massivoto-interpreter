@@ -25,7 +25,7 @@ describe('Reserved Arguments', () => {
       const instr = parsing.value
 
       expect(instr.output).toBeDefined()
-      expect(instr.output).toEqual({ type: 'identifier', value: 'result' })
+      expect(instr.output).toEqual({ type: 'binding', name: 'result' })
       // Regular args should not contain output
       expect(
         instr.args.find((a: any) => a.name.value === 'output'),
@@ -38,7 +38,7 @@ describe('Reserved Arguments', () => {
       expect(parsing.isAccepted()).toBe(true)
       const instr = parsing.value
 
-      expect(instr.output).toEqual({ type: 'identifier', value: 'tweets' })
+      expect(instr.output).toEqual({ type: 'binding', name: 'tweets' })
       expect(instr.args.length).toBe(1)
       expect(instr.args[0].name.value).toBe('message')
     })
@@ -49,7 +49,7 @@ describe('Reserved Arguments', () => {
       expect(parsing.isAccepted()).toBe(true)
       const instr = parsing.value
 
-      expect(instr.output).toEqual({ type: 'identifier', value: 'response' })
+      expect(instr.output).toEqual({ type: 'binding', name: 'response' })
       expect(instr.args.length).toBe(0)
     })
 
@@ -165,7 +165,7 @@ describe('Reserved Arguments', () => {
       const instr = parsing.value
 
       expect(instr.condition).toEqual({ type: 'identifier', value: 'isActive' })
-      expect(instr.output).toEqual({ type: 'identifier', value: 'result' })
+      expect(instr.output).toEqual({ type: 'binding', name: 'result' })
       expect(instr.args.length).toBe(1)
       expect(instr.args[0].name.value).toBe('message')
     })
@@ -320,7 +320,7 @@ describe('Reserved Arguments', () => {
         const instr = parsing.value
 
         expect(instr.label).toBe('checkpoint')
-        expect(instr.output).toEqual({ type: 'identifier', value: 'result' })
+        expect(instr.output).toEqual({ type: 'binding', name: 'result' })
         expect(instr.condition).toEqual({
           type: 'identifier',
           value: 'isActive',
@@ -391,7 +391,7 @@ describe('Reserved Arguments', () => {
       const instr = parsing.value
 
       expect(instr.collect).toBeDefined()
-      expect(instr.collect).toEqual({ type: 'identifier', value: 'myResults' })
+      expect(instr.collect).toEqual({ type: 'binding', name: 'myResults' })
     })
 
     it('parses collect=images', () => {
@@ -400,8 +400,8 @@ describe('Reserved Arguments', () => {
       )
       expect(parsing.isAccepted()).toBe(true)
       expect(parsing.value.collect).toEqual({
-        type: 'identifier',
-        value: 'images',
+        type: 'binding',
+        name: 'images',
       })
     })
 
@@ -444,9 +444,9 @@ describe('Reserved Arguments', () => {
 
       expect(instr.retry).toEqual({ type: 'literal-number', value: 3 })
       expect(instr.condition).toBeDefined()
-      expect(instr.collect).toEqual({ type: 'identifier', value: 'r' })
+      expect(instr.collect).toEqual({ type: 'binding', name: 'r' })
       expect(instr.forEach).toBeDefined()
-      expect(instr.forEach?.iterator.value).toBe('item')
+      expect(instr.forEach?.iterator.name).toBe('item')
     })
 
     it('parses retry and collect with forEach and output', () => {
@@ -458,7 +458,7 @@ describe('Reserved Arguments', () => {
 
       expect(instr.forEach).toBeDefined()
       expect(instr.retry).toEqual({ type: 'literal-number', value: 2 })
-      expect(instr.output).toEqual({ type: 'identifier', value: 'result' })
+      expect(instr.output).toEqual({ type: 'binding', name: 'result' })
     })
   })
 })

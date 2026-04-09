@@ -11,8 +11,8 @@ import { PipeExpressionNode } from './args-details/pipe-parser/pipe-parser.js'
  */
 export interface MapperExpressionNode {
   type: 'mapper'
-  source: ExpressionNode // left side of ->
-  target: BareStringNode // right side of ->
+  source: ReferenceNode // left side of -> (scope lookup with optional path)
+  target: BindingNode // right side of -> (name introduced in scope)
 }
 
 export type LiteralNode =
@@ -62,6 +62,26 @@ export interface LogicalExpressionNode {
 export interface BareStringNode {
   type: 'bare-string'
   value: string
+}
+
+/**
+ * BindingNode represents a name that designates WHERE TO WRITE in scope (L-value).
+ * Used for: output=, collect=, forEach iterator, mapper target.
+ * The interpreter reads .name to determine the scope slot. Never evaluated.
+ */
+export interface BindingNode {
+  type: 'binding'
+  name: string
+}
+
+/**
+ * ReferenceNode represents a name that designates WHERE TO READ from scope (R-value).
+ * Supports dot-path navigation: path ['data', 'users'] resolves data.users from scope.
+ * Used for: mapper source.
+ */
+export interface ReferenceNode {
+  type: 'reference'
+  path: string[]
 }
 
 export interface LiteralStringNode {
@@ -141,6 +161,8 @@ export type ExpressionNode =
   //| ConditionalExpressionNode // a ? b : c (optional)
   | PipeExpressionNode
   | MapperExpressionNode
+  | BindingNode
+  | ReferenceNode
 
 export interface ArgumentNode {
   type: 'argument'
@@ -154,7 +176,7 @@ export interface ArgumentNode {
  */
 export interface OutputArgNode {
   type: 'output-arg'
-  target: IdentifierNode
+  target: BindingNode
 }
 
 /**
@@ -178,7 +200,7 @@ export interface IfArgNode {
 export interface ForEachArgNode {
   type: 'forEach-arg'
   iterable: ExpressionNode // left side of mapper (users, data.users, {users|filter})
-  iterator: BareStringNode // right side of mapper (user) - variable name
+  iterator: BindingNode // right side of mapper (user) - variable name bound in scope
 }
 
 /**
@@ -196,7 +218,7 @@ export interface RetryArgNode {
  */
 export interface CollectArgNode {
   type: 'collect-arg'
-  target: IdentifierNode
+  target: BindingNode
 }
 
 /**
@@ -241,12 +263,12 @@ export interface InstructionNode {
   type: 'instruction'
   action: ActionNode
   args: ArgumentNode[]
-  output?: IdentifierNode // from output=identifier
+  output?: BindingNode // from output=binding
   condition?: ExpressionNode // from if=expression
   forEach?: ForEachArgNode // from forEach=iterable -> iterator (used by @block/begin)
   label?: string // from label="name" - jump target for @flow/goto
   retry?: ExpressionNode // from retry=expression (R-FILTER-63)
-  collect?: IdentifierNode // from collect=identifier (R-FILTER-63)
+  collect?: BindingNode // from collect=binding (R-FILTER-63)
 }
 
 export type DslAstNode =

@@ -19,86 +19,62 @@ describe('Mapper parser', () => {
   const grammar = createMapperGrammar()
 
   describe('AC-MAP-01: Basic mapper expression', () => {
-    it('should parse users -> name as MapperExpressionNode', () => {
+    it('should parse users -> name as MapperExpressionNode with ReferenceNode source and BindingNode target', () => {
       const stream = Stream.ofChars('users -> name')
       const parsing = grammar.parse(stream)
 
       expect(parsing.isAccepted()).toBe(true)
       expect(parsing.value).toEqual({
         type: 'mapper',
-        source: { type: 'identifier', value: 'users' },
-        target: { type: 'bare-string', value: 'name' },
+        source: { type: 'reference', path: ['users'] },
+        target: { type: 'binding', name: 'name' },
       })
     })
 
     it('should parse with spaces around arrow', () => {
-      // Note: Genlex keywords require whitespace boundaries for proper tokenization.
-      // `users->name` without spaces cannot be tokenized correctly.
-      // This is consistent with other operators like `a + b` vs `a+b`.
       const stream = Stream.ofChars('users  ->  name')
       const parsing = grammar.parse(stream)
 
       expect(parsing.isAccepted()).toBe(true)
       expect(parsing.value).toEqual({
         type: 'mapper',
-        source: { type: 'identifier', value: 'users' },
-        target: { type: 'bare-string', value: 'name' },
+        source: { type: 'reference', path: ['users'] },
+        target: { type: 'binding', name: 'name' },
       })
     })
   })
 
-  describe('AC-MAP-02: Pipe expression as source', () => {
-    it('should parse {users|filter:active} -> id with pipe as source', () => {
+  describe('AC-MAP-02: Pipe expression as source - rejected by mapper, handled by forEach fallback', () => {
+    it('should NOT parse {users|filter:active} -> id as mapper (complex source rejected)', () => {
+      // The mapper parser only accepts reference sources (IDENTIFIER(.IDENTIFIER)*)
+      // Pipe expressions fall through to baseExpression, not producing a mapper
       const stream = Stream.ofChars('{users|filter:active} -> id')
-      const parsing = grammar.parse(stream)
+      const parsing = grammar.thenEos().parse(stream)
 
-      expect(parsing.isAccepted()).toBe(true)
-      expect(parsing.value).toMatchObject({
-        type: 'mapper',
-        source: {
-          type: 'pipe-expression',
-          input: { type: 'identifier', value: 'users' },
-          segments: [
-            {
-              pipeName: 'filter',
-              args: [{ type: 'identifier', value: 'active' }],
-            },
-          ],
-        },
-        target: { type: 'bare-string', value: 'id' },
-      })
+      // The mapper parser rejects this because the source is a pipe expression.
+      // The full expression parser falls back to the pipe expression alone,
+      // but then '-> id' remains unconsumed, so thenEos() rejects.
+      expect(parsing.isAccepted()).toBe(false)
     })
 
-    it('should parse {users|filter:active|sort:asc} -> id with multiple pipes', () => {
+    it('should NOT parse {users|filter:active|sort:asc} -> id as mapper', () => {
       const stream = Stream.ofChars('{users|filter:active|sort:asc} -> id')
-      const parsing = grammar.parse(stream)
+      const parsing = grammar.thenEos().parse(stream)
 
-      expect(parsing.isAccepted()).toBe(true)
-      const result = parsing.value as {
-        type: string
-        source: { type: string; segments: unknown[] }
-      }
-      expect(result.type).toBe('mapper')
-      expect(result.source.type).toBe('pipe-expression')
-      expect(result.source.segments).toHaveLength(2)
+      expect(parsing.isAccepted()).toBe(false)
     })
   })
 
-  describe('AC-MAP-03: Member expression as source', () => {
-    it('should parse data.users -> email with member as source', () => {
+  describe('AC-MAP-03: Member expression as source becomes ReferenceNode with path', () => {
+    it('should parse data.users -> email with dotted reference', () => {
       const stream = Stream.ofChars('data.users -> email')
       const parsing = grammar.parse(stream)
 
       expect(parsing.isAccepted()).toBe(true)
       expect(parsing.value).toEqual({
         type: 'mapper',
-        source: {
-          type: 'member',
-          object: { type: 'identifier', value: 'data' },
-          path: ['users'],
-          computed: false,
-        },
-        target: { type: 'bare-string', value: 'email' },
+        source: { type: 'reference', path: ['data', 'users'] },
+        target: { type: 'binding', name: 'email' },
       })
     })
 
@@ -107,73 +83,51 @@ describe('Mapper parser', () => {
       const parsing = grammar.parse(stream)
 
       expect(parsing.isAccepted()).toBe(true)
-      expect(parsing.value).toMatchObject({
+      expect(parsing.value).toEqual({
         type: 'mapper',
-        source: {
-          type: 'member',
-          object: { type: 'identifier', value: 'response' },
-          path: ['data', 'users'],
-        },
-        target: { type: 'bare-string', value: 'name' },
+        source: { type: 'reference', path: ['response', 'data', 'users'] },
+        target: { type: 'binding', name: 'name' },
       })
     })
   })
 
   describe('AC-MAP-04: Parser rejects number on right side', () => {
-    it('should reject users -> 123 (right side must be BareString)', () => {
+    it('should reject users -> 123 (right side must be binding identifier)', () => {
       const stream = Stream.ofChars('users -> 123')
       const parsing = grammar.thenEos().parse(stream)
 
-      // Parser should not accept this as a complete mapper expression
-      // With thenEos(), it must consume all input - number target is invalid
       expect(parsing.isAccepted()).toBe(false)
     })
   })
 
   describe('AC-MAP-05: Parser rejects dots in target', () => {
-    it('should reject users -> settings.theme (no dots in BareString)', () => {
+    it('should reject users -> settings.theme (no dots in binding)', () => {
       const stream = Stream.ofChars('users -> settings.theme')
       const parsing = grammar.thenEos().parse(stream)
 
-      // Parser should not accept this as a complete mapper expression
-      // With thenEos(), the trailing .theme causes rejection
       expect(parsing.isAccepted()).toBe(false)
     })
   })
 
   describe('AC-MAP-06: Precedence - mapper is lowest', () => {
-    it('should parse users|filter:x -> name with pipe as entire source', () => {
-      // Without braces, the pipe must still be parsed as the source
-      // This tests that mapper has lower precedence than pipe
+    it('should parse {users|filter:x} -> name with pipe inside braces, reference outside', () => {
+      // With the new mapper, {users|filter:x} is not a valid reference, so this is rejected
       const stream = Stream.ofChars('{users|filter:x} -> name')
-      const parsing = grammar.parse(stream)
+      const parsing = grammar.thenEos().parse(stream)
 
-      expect(parsing.isAccepted()).toBe(true)
-      const result = parsing.value as { type: string; source: { type: string } }
-      expect(result.type).toBe('mapper')
-      expect(result.source.type).toBe('pipe-expression')
+      expect(parsing.isAccepted()).toBe(false)
     })
 
-    it('should parse complex expression a + b -> name with binary as source', () => {
-      // Note: Without parentheses, binary operations are part of the source
+    it('should reject complex expression (a + b) -> name (not a reference)', () => {
       const stream = Stream.ofChars('(a + b) -> name')
-      const parsing = grammar.parse(stream)
+      const parsing = grammar.thenEos().parse(stream)
 
-      expect(parsing.isAccepted()).toBe(true)
-      expect(parsing.value).toMatchObject({
-        type: 'mapper',
-        source: {
-          type: 'binary',
-          operator: '+',
-        },
-        target: { type: 'bare-string', value: 'name' },
-      })
+      expect(parsing.isAccepted()).toBe(false)
     })
   })
 
   describe('AC-MAP-07: Backwards compatibility', () => {
     it('should parse count=42 (no arrow) as LiteralNumberNode', () => {
-      // When no arrow is present, expression should parse normally
       const stream = Stream.ofChars('42')
       const parsing = grammar.parse(stream)
 
@@ -218,16 +172,15 @@ describe('Mapper parser', () => {
   })
 
   describe('AC-MAP-08: Mapper inside braces', () => {
-    it('should parse data={users -> name} with mapper inside braces', () => {
-      // The braced expression should contain a mapper
+    it('should parse {users -> name} with mapper inside braces', () => {
       const stream = Stream.ofChars('{users -> name}')
       const parsing = grammar.parse(stream)
 
       expect(parsing.isAccepted()).toBe(true)
       expect(parsing.value).toEqual({
         type: 'mapper',
-        source: { type: 'identifier', value: 'users' },
-        target: { type: 'bare-string', value: 'name' },
+        source: { type: 'reference', path: ['users'] },
+        target: { type: 'binding', name: 'name' },
       })
     })
 
@@ -236,10 +189,10 @@ describe('Mapper parser', () => {
       const parsing = grammar.parse(stream)
 
       expect(parsing.isAccepted()).toBe(true)
-      expect(parsing.value).toMatchObject({
+      expect(parsing.value).toEqual({
         type: 'mapper',
-        source: { type: 'member' },
-        target: { type: 'bare-string', value: 'email' },
+        source: { type: 'reference', path: ['data', 'users'] },
+        target: { type: 'binding', name: 'email' },
       })
     })
   })
@@ -249,7 +202,6 @@ describe('Mapper parser', () => {
       const stream = Stream.ofChars('-> name')
       const parsing = grammar.parse(stream)
 
-      // No valid expression before ->, so parser rejects
       expect(parsing.isAccepted()).toBe(false)
     })
 
@@ -257,7 +209,6 @@ describe('Mapper parser', () => {
       const stream = Stream.ofChars('users ->')
       const parsing = grammar.thenEos().parse(stream)
 
-      // With thenEos(), the incomplete mapper (missing target) is rejected
       expect(parsing.isAccepted()).toBe(false)
     })
 
@@ -265,41 +216,27 @@ describe('Mapper parser', () => {
       const stream = Stream.ofChars('users -> friends -> name')
       const parsing = grammar.thenEos().parse(stream)
 
-      // Chaining is not allowed - parses first mapper, but -> name remains unconsumed
       expect(parsing.isAccepted()).toBe(false)
     })
 
-    it('should parse mapper with string literal source', () => {
-      // Unusual but valid per PRD
+    it('should reject mapper with string literal source (not a reference)', () => {
       const stream = Stream.ofChars('"hello" -> value')
-      const parsing = grammar.parse(stream)
+      const parsing = grammar.thenEos().parse(stream)
 
-      expect(parsing.isAccepted()).toBe(true)
-      expect(parsing.value).toMatchObject({
-        type: 'mapper',
-        source: { type: 'literal-string', value: 'hello' },
-        target: { type: 'bare-string', value: 'value' },
-      })
+      expect(parsing.isAccepted()).toBe(false)
     })
 
-    it('should parse mapper with array literal source', () => {
+    it('should reject mapper with array literal source (not a reference)', () => {
       const stream = Stream.ofChars('[a, b, c] -> value')
-      const parsing = grammar.parse(stream)
+      const parsing = grammar.thenEos().parse(stream)
 
-      expect(parsing.isAccepted()).toBe(true)
-      expect(parsing.value).toMatchObject({
-        type: 'mapper',
-        source: { type: 'array-literal' },
-        target: { type: 'bare-string', value: 'value' },
-      })
+      expect(parsing.isAccepted()).toBe(false)
     })
 
     it('should reject reserved words as target', () => {
-      // "true" and "false" are reserved - IDENTIFIER token rejects them
       const stream = Stream.ofChars('users -> true')
       const parsing = grammar.thenEos().parse(stream)
 
-      // With thenEos(), "true" as target is rejected (reserved word)
       expect(parsing.isAccepted()).toBe(false)
     })
   })

@@ -12,6 +12,7 @@ import {
   FileLiteralNode,
   GlobLiteralNode,
   SystemVariableNode,
+  ReferenceNode,
 } from '../parser/ast.js'
 import { PipeExpressionNode } from '../parser/args-details/pipe-parser/pipe-parser.js'
 import { PipeRegistry } from '../pipe-registry/index.js'
@@ -100,6 +101,16 @@ export class ExpressionEvaluator {
       case 'pipe-expression':
         return this.evaluatePipe(expr, context)
 
+      case 'reference':
+        return this.resolveReference(expr, context)
+
+      case 'binding':
+        throw new EvaluationError(
+          'BindingNode should not be evaluated -- it is an L-value, not an R-value. The interpreter reads .name directly.',
+          'binding',
+          expr,
+        )
+
       default:
         throw new EvaluationError(
           `Unknown expression type: ${(expr as any).type}`,
@@ -138,6 +149,29 @@ export class ExpressionEvaluator {
   ): any {
     const scopeKey = '$' + expr.name
     return lookup(scopeKey, context.scopeChain)
+  }
+
+  /**
+   * Resolves a ReferenceNode by looking up path[0] from scope chain,
+   * then walking path[1..] as property access.
+   */
+  private resolveReference(
+    expr: ReferenceNode,
+    context: ExecutionContext,
+  ): any {
+    const [root, ...rest] = expr.path
+
+    const scopeValue = lookup(root, context.scopeChain)
+    let current = scopeValue !== undefined ? scopeValue : context.data[root]
+
+    for (const prop of rest) {
+      if (current === null || current === undefined) {
+        return undefined
+      }
+      current = current[prop]
+    }
+
+    return current
   }
 
   /**

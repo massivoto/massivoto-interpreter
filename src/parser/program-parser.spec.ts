@@ -24,7 +24,7 @@ describe('Program parser', () => {
 
       expect(result.body).toHaveLength(1)
       const instruction = result.body[0] as InstructionNode
-      expect(instruction.output?.value).toBe('users')
+      expect(instruction.output?.name).toBe('users')
     })
   })
 
