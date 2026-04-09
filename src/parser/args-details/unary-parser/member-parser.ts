@@ -1,5 +1,6 @@
 import { F, SingleParser, Tuple } from '@masala/parser'
 import {
+  BareStringNode,
   ExpressionNode,
   IdentifierNode,
   MemberExpressionNode,
@@ -17,9 +18,14 @@ export function createMemberExpressionParser(
       const obj = tuple.first()
       const props = tuple.array().slice(1) as IdentifierNode[]
 
+      // R-LITERAL-05: dot access on bare string upgrades to IdentifierNode (variable reference)
+      const resolvedObj: ExpressionNode = obj.type === 'bare-string'
+        ? { type: 'identifier' as const, value: (obj as BareStringNode).value }
+        : obj
+
       return {
         type: 'member',
-        object: obj,
+        object: resolvedObj,
         path: props.map((id) => id.value),
         computed: false,
       }

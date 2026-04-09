@@ -122,7 +122,7 @@ export interface ArrayLiteralNode {
 /**
  * Unary and binary can be applied on these
  */
-export type AtomicNode = IdentifierNode | SystemVariableNode | LiteralNode
+export type AtomicNode = IdentifierNode | SystemVariableNode | LiteralNode | BareStringNode
 
 export interface IdentifierNode {
   type: 'identifier'
@@ -142,6 +142,7 @@ export type SimpleExpressionNode =
   | IdentifierNode
   | SystemVariableNode
   | LiteralNode
+  | BareStringNode
   | ArrayLiteralNode
   | MemberExpressionNode
   | UnaryExpressionNode
@@ -153,6 +154,7 @@ export type ExpressionNode =
   | IdentifierNode
   | SystemVariableNode
   | LiteralNode
+  | BareStringNode
   | ArrayLiteralNode
   | MemberExpressionNode
   | UnaryExpressionNode

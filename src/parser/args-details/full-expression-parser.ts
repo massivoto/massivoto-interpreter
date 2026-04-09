@@ -8,49 +8,70 @@ import {
 } from './pipe-parser/pipe-parser.js'
 import { createSimpleExpressionParser } from './simple-expression-parser.js'
 import { ArgTokens } from './tokens/argument-tokens.js'
-import { atomicParser } from './tokens/literals-parser.js'
+import { atomicParser, expressionAtomicParser } from './tokens/literals-parser.js'
 
+// R-LITERAL-02: Dual expression ladder (bare context vs braced context)
 export function createExpressionWithPipe(
   tokens: ArgTokens,
 ): SingleParser<ExpressionNode> {
   const { LEFT, RIGHT, OPEN, CLOSE } = tokens
 
-  const parenthesisExpression = F.lazy(() =>
-    LEFT.drop().then(fullExpression).then(RIGHT.drop()),
+  // --- Braced ladder: IdentifierNode for variables inside {} ---
+  const bracedAtomic: SingleParser<ExpressionNode> = expressionAtomicParser(tokens)
+
+  const bracedParenthesisExpression = F.lazy(() =>
+    LEFT.drop().then(bracedFullExpression).then(RIGHT.drop()),
   ).map((t) => t.single())
 
-  // Braced expressions: {expr} - for complex expressions in arguments like if={x > 10}
-  // Must be lazy to avoid infinite recursion with fullExpression
-  const bracedExpression = F.lazy(() =>
-    OPEN.drop().then(fullExpression).then(CLOSE.drop()),
-  ).map((t) => t.single())
+  const bracedArrayLiteral = createArrayParser(tokens, () => bracedFullExpression)
 
-  // Array literals: [1, 2, 3] - uses fullExpression for elements
-  const arrayLiteral = createArrayParser(tokens, () => fullExpression)
+  const bracedPrimary = F.try(bracedArrayLiteral)
+    .or(F.try(bracedParenthesisExpression))
+    .or(bracedAtomic)
 
-  const atomic: SingleParser<ExpressionNode> = atomicParser(tokens)
-  const primary = F.try(arrayLiteral)
-    .or(F.try(parenthesisExpression))
-    .or(atomic)
+  const bracedSimpleExpression: SingleParser<SimpleExpressionNode> =
+    createSimpleExpressionParser(tokens, bracedPrimary)
 
-  const simpleExpression: SingleParser<SimpleExpressionNode> =
-    createSimpleExpressionParser(tokens, primary)
-
-  const pipeExpression: SingleParser<PipeExpressionNode> = createPipeParser(
+  // Pipe parser always uses braced context (pipes live inside {})
+  const bracedPipeExpression: SingleParser<PipeExpressionNode> = createPipeParser(
     tokens,
-    simpleExpression,
+    bracedSimpleExpression,
   )
 
-  // Order matters: try pipe expression first (requires |> segments),
-  // then braced expression (simple expr in braces), then bare simple expression
-  // Note: baseExpression is the expression WITHOUT mapper - used internally
-  const baseExpression: SingleParser<ExpressionNode> = F.try(pipeExpression)
+  const bracedBaseExpression: SingleParser<ExpressionNode> = F.try(bracedPipeExpression)
+    .or(bracedSimpleExpression)
+
+  const bracedFullExpression = createMapperParser(tokens, bracedBaseExpression)
+
+  // Braced expression: { bracedFullExpression } -- unwraps braces, returns inner expression
+  const bracedExpression = F.lazy(() =>
+    OPEN.drop().then(bracedFullExpression).then(CLOSE.drop()),
+  ).map((t) => t.single())
+
+  // --- Bare ladder: BareStringNode for identifiers at top level ---
+  const bareAtomic: SingleParser<ExpressionNode> = atomicParser(tokens)
+
+  const bareParenthesisExpression = F.lazy(() =>
+    LEFT.drop().then(bareFullExpression).then(RIGHT.drop()),
+  ).map((t) => t.single())
+
+  const bareArrayLiteral = createArrayParser(tokens, () => bareFullExpression)
+
+  // Bare primary includes bracedExpression and bracedPipeExpression for {} contexts
+  const barePrimary = F.try(bareArrayLiteral)
+    .or(F.try(bareParenthesisExpression))
     .or(F.try(bracedExpression))
-    .or(simpleExpression)
+    .or(bareAtomic)
 
-  // Wrap with mapper parser (lowest precedence)
-  // mapperExpression = baseExpression (-> bareString)?
-  const fullExpression = createMapperParser(tokens, baseExpression)
+  const bareSimpleExpression: SingleParser<SimpleExpressionNode> =
+    createSimpleExpressionParser(tokens, barePrimary)
 
-  return fullExpression
+  // In bare context, pipes are accessed through bracedExpression (which includes bracedPipeExpression).
+  // We also try bracedPipeExpression at the top level for direct {expr|pipe} syntax.
+  const bareBaseExpression: SingleParser<ExpressionNode> = F.try(bracedPipeExpression)
+    .or(bareSimpleExpression)
+
+  const bareFullExpression = createMapperParser(tokens, bareBaseExpression)
+
+  return bareFullExpression
 }

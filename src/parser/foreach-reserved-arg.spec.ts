@@ -100,7 +100,7 @@ describe('ForEach Reserved Argument', () => {
       const instr = parsing.value as InstructionNode
 
       const arg = instr.args[0]
-      expect(arg.value).toEqual({ type: 'identifier', value: '_myVar' })
+      expect(arg.value).toEqual({ type: 'bare-string', value: '_myVar' })
     })
 
     it('parses iterator with _ prefix (unusual but allowed)', () => {

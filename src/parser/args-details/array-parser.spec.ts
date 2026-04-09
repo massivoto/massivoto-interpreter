@@ -119,9 +119,9 @@ describe('Array literal parser', () => {
 
       expect(parsing.isAccepted()).toBe(true)
       const result = parsing.value as ArrayLiteralNode
-      expect(result.elements[0]).toEqual({ type: 'identifier', value: 'a' })
-      expect(result.elements[1]).toEqual({ type: 'identifier', value: 'b' })
-      expect(result.elements[2]).toEqual({ type: 'identifier', value: 'c' })
+      expect(result.elements[0]).toEqual({ type: 'bare-string', value: 'a' })
+      expect(result.elements[1]).toEqual({ type: 'bare-string', value: 'b' })
+      expect(result.elements[2]).toEqual({ type: 'bare-string', value: 'c' })
     })
 
     it('should parse array with member expressions', () => {

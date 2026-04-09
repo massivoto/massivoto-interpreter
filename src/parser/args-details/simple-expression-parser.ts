@@ -13,7 +13,7 @@ import {
 } from './binary-operation/logical-parser.js'
 import { multiplicativeParser } from './binary-operation/multiplicative-parser.js'
 import { ArgTokens } from './tokens/argument-tokens.js'
-import { atomicParser } from './tokens/literals-parser.js'
+import { atomicParser, expressionAtomicParser } from './tokens/literals-parser.js'
 import { createMemberExpressionParser } from './unary-parser/member-parser.js'
 import { unaryParser } from './unary-parser/unary-parser.js'
 
@@ -42,6 +42,8 @@ export function createSimpleExpressionParser(
   return simpleExpression as SingleParser<SimpleExpressionNode>
 }
 
+// R-LITERAL-02: uses expressionAtomicParser (braced context) since this is used
+// inside parentheses and braces where identifiers should remain IdentifierNode
 export function createSimpleExpressionWithParenthesesParser(
   tokens: ArgTokens,
 ): SingleParser<SimpleExpressionNode> {
@@ -50,7 +52,7 @@ export function createSimpleExpressionWithParenthesesParser(
   const parenthesisExpression = F.lazy(() =>
     LEFT.drop().then(simpleExpression).then(RIGHT.drop()),
   ).map((t) => t.single())
-  const primary: SingleParser<ExpressionNode> = atomicParser(tokens).or(
+  const primary: SingleParser<ExpressionNode> = expressionAtomicParser(tokens).or(
     parenthesisExpression,
   )
 

@@ -19,7 +19,7 @@ describe('Atomic parser', () => {
     const parsing = grammar.parse(stream)
     expect(parsing.isAccepted()).toBe(true)
     expect(parsing.value).toEqual({
-      type: 'identifier',
+      type: 'bare-string',
       value: 'id',
     })
   })
@@ -29,7 +29,7 @@ describe('Atomic parser', () => {
     const parsing = grammar.parse(stream)
     expect(parsing.isAccepted()).toBe(true)
     expect(parsing.value).toEqual({
-      type: 'identifier',
+      type: 'bare-string',
       value: 'tryThis',
     })
   })
@@ -39,7 +39,7 @@ describe('Atomic parser', () => {
     const parsing = grammar.parse(stream)
     expect(parsing.isAccepted()).toBe(true)
     expect(parsing.value).toEqual({
-      type: 'identifier',
+      type: 'bare-string',
       value: 'trueMan',
     })
   })
@@ -90,7 +90,7 @@ describe('Atomic parser', () => {
     const stream = Stream.ofChars('True')
     const parsing = grammar.parse(stream)
     expect(parsing.isAccepted()).toBe(true)
-    expect(parsing.value).toEqual({ type: 'identifier', value: 'True' })
+    expect(parsing.value).toEqual({ type: 'bare-string', value: 'True' })
   })
 
   it('should treat identifiers starting with true as identifier', () => {
@@ -98,7 +98,7 @@ describe('Atomic parser', () => {
     const parsing = grammar.parse(stream)
     expect(parsing.isAccepted()).toBe(true)
     expect(parsing.value).toEqual({
-      type: 'identifier',
+      type: 'bare-string',
       value: 'trueValue',
     })
   })
@@ -107,7 +107,7 @@ describe('Atomic parser', () => {
     const stream = Stream.ofChars('falsey')
     const parsing = grammar.parse(stream)
     expect(parsing.isAccepted()).toBe(true)
-    expect(parsing.value).toEqual({ type: 'identifier', value: 'falsey' })
+    expect(parsing.value).toEqual({ type: 'bare-string', value: 'falsey' })
   })
 })
 

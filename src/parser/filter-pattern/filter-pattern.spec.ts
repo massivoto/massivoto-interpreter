@@ -44,7 +44,7 @@ describe('Filter Pattern: forEach + if (R-FILTER-41 to R-FILTER-44)', () => {
       const parser = buildProgramParser()
       const program = parser.val(
         `@block/begin forEach=situations -> situation if={situation != "pit stop"}
-@ai/describe situation=situation
+@ai/describe situation={situation}
 @block/end`,
       )
 
@@ -112,7 +112,7 @@ describe('Filter Pattern: forEach + if (R-FILTER-41 to R-FILTER-44)', () => {
 
       const parser = buildProgramParser()
       const program = parser.val(
-        `@ai/describe situation=situation forEach=situations -> situation if={situation != "pit stop"}`,
+        `@ai/describe situation={situation} forEach=situations -> situation if={situation != "pit stop"}`,
       )
 
       const interpreter = new CoreInterpreter(registry)

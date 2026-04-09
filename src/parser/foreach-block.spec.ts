@@ -96,7 +96,7 @@ describe('ForEach Block Integration', () => {
       const block = result.body[0] as BlockNode
       expect(block.forEach).toBeDefined()
       expect(block.condition).toBeDefined()
-      expect(block.condition).toEqual({ type: 'identifier', value: 'isActive' })
+      expect(block.condition).toEqual({ type: 'bare-string', value: 'isActive' })
     })
 
     it('AC-FP-02: block with forEach and expression condition', () => {

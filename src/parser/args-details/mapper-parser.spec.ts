@@ -144,7 +144,7 @@ describe('Mapper parser', () => {
 
       expect(parsing.isAccepted()).toBe(true)
       expect(parsing.value).toEqual({
-        type: 'identifier',
+        type: 'bare-string',
         value: 'users',
       })
     })

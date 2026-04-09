@@ -82,7 +82,7 @@ describe('Expression Boundaries', () => {
       expect(flagArg?.value.type).toBe('unary')
       const unary = flagArg?.value as UnaryExpressionNode
       expect(unary.operator).toBe('!')
-      expect(unary.argument).toEqual({ type: 'identifier', value: 'disabled' })
+      expect(unary.argument).toEqual({ type: 'bare-string', value: 'disabled' })
     })
 
     /**
@@ -125,8 +125,8 @@ describe('Expression Boundaries', () => {
       expect(countArg?.value.type).toBe('binary')
       const binary = countArg?.value as BinaryExpressionNode
       expect(binary.operator).toBe('+')
-      expect(binary.left).toEqual({ type: 'identifier', value: 'a' })
-      expect(binary.right).toEqual({ type: 'identifier', value: 'b' })
+      expect(binary.left).toEqual({ type: 'bare-string', value: 'a' })
+      expect(binary.right).toEqual({ type: 'bare-string', value: 'b' })
     })
 
     /**
@@ -149,8 +149,8 @@ describe('Expression Boundaries', () => {
       expect(activeArg?.value.type).toBe('logical')
       const logical = activeArg?.value as LogicalExpressionNode
       expect(logical.operator).toBe('&&')
-      expect(logical.left).toEqual({ type: 'identifier', value: 'x' })
-      expect(logical.right).toEqual({ type: 'identifier', value: 'y' })
+      expect(logical.left).toEqual({ type: 'bare-string', value: 'x' })
+      expect(logical.right).toEqual({ type: 'bare-string', value: 'y' })
     })
 
     /**

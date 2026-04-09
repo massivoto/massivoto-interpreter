@@ -29,7 +29,7 @@ describe('Genlex for arg parser', () => {
     expect(parsing.value).toEqual({
       type: 'argument',
       name: { type: 'identifier', value: 'arg1' },
-      value: { type: 'identifier', value: 'val1' },
+      value: { type: 'bare-string', value: 'val1' },
     })
   })
 

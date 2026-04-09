@@ -142,7 +142,7 @@ describe('Retry Execution (R-FILTER-81 to R-FILTER-83)', () => {
 
       const parser = buildProgramParser()
       const program = parser.val(
-        '@ai/generateImage prompt=prompt forEach=prompts -> prompt retry=2',
+        '@ai/generateImage prompt={prompt} forEach=prompts -> prompt retry=2',
       )
 
       const interpreter = new CoreInterpreter(registry)

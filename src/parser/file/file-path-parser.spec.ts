@@ -299,7 +299,7 @@ describe('File path in argument context', () => {
     const parsing2 = argParser2.parse(stream2)
     expect(parsing2.isAccepted()).toBe(true)
     expect(parsing2.value.value).toEqual({
-      type: 'identifier',
+      type: 'bare-string',
       value: 'result',
     })
   })

@@ -62,7 +62,7 @@ describe('Collect Execution (R-FILTER-101 to R-FILTER-103)', () => {
 
       const parser = buildProgramParser()
       const program = parser.val(
-        '@ai/generateImage situation=situation forEach=situations -> situation collect=images',
+        '@ai/generateImage situation={situation} forEach=situations -> situation collect=images',
       )
 
       const interpreter = new CoreInterpreter(registry)
@@ -99,7 +99,7 @@ describe('Collect Execution (R-FILTER-101 to R-FILTER-103)', () => {
 
       const parser = buildProgramParser()
       const program = parser.val(
-        '@ai/generateImage situation=situation forEach=situations -> situation if={situation != "pit stop"} collect=images',
+        '@ai/generateImage situation={situation} forEach=situations -> situation if={situation != "pit stop"} collect=images',
       )
 
       const interpreter = new CoreInterpreter(registry)
@@ -144,7 +144,7 @@ describe('Collect Execution (R-FILTER-101 to R-FILTER-103)', () => {
 
       const parser = buildProgramParser()
       const program = parser.val(
-        '@ai/generateImage situation=situation forEach=situations -> situation collect=images',
+        '@ai/generateImage situation={situation} forEach=situations -> situation collect=images',
       )
 
       const interpreter = new CoreInterpreter(registry)

@@ -102,7 +102,7 @@ describe('File path integration: full command parsing', () => {
 
       const inputArg = findArg(instruction, 'input')
       expect(inputArg.value).toEqual({
-        type: 'identifier',
+        type: 'bare-string',
         value: 'data',
       })
 

@@ -9,6 +9,7 @@ import {
   createReturn,
   ExecutionContext,
   Interpreter,
+  lookup,
   nowTs,
   popScope,
   ProgramResult,
@@ -24,6 +25,7 @@ import type { ExitResult } from './core-handlers/flow/exit.handler.js'
 import type { ReturnResult } from './core-handlers/flow/return.handler.js'
 import {
   BlockNode,
+  ExpressionNode,
   ForEachArgNode,
   InstructionNode,
   ProgramNode,
@@ -148,6 +150,20 @@ function writeSystemVariables(
   write('$last', index === length - 1, scopeChain)
   write('$odd', (index + 1) % 2 === 1, scopeChain)
   write('$even', (index + 1) % 2 === 0, scopeChain)
+}
+
+// R-LITERAL-06: bare string in if= position resolves as variable name from scope.
+// Without this, `if=condition` becomes always-true (the literal "condition" is truthy).
+function resolveCondition(
+  condition: ExpressionNode,
+  context: ExecutionContext,
+  evaluator: ExpressionEvaluator,
+): Promise<any> {
+  if (condition.type === 'bare-string') {
+    const name = condition.value
+    return Promise.resolve(lookup(name, context.scopeChain) ?? context.data[name])
+  }
+  return evaluator.evaluate(condition, context)
 }
 
 export class CoreInterpreter implements Interpreter {
@@ -448,9 +464,10 @@ export class CoreInterpreter implements Interpreter {
 
         // R-BLK-22: For InstructionNode: check condition, execute, handle flow control
         if (statement.condition) {
-          const conditionValue = await this.evaluator.evaluate(
+          const conditionValue = await resolveCondition(
             statement.condition,
             currentContext,
+            this.evaluator,
           )
           if (!conditionValue) {
             // Condition is falsy, skip this instruction
@@ -634,9 +651,10 @@ export class CoreInterpreter implements Interpreter {
 
     // Check condition if present (block with if= only, no forEach)
     if (block.condition) {
-      const conditionValue = await this.evaluator.evaluate(
+      const conditionValue = await resolveCondition(
         block.condition,
         context,
+        this.evaluator,
       )
       if (!conditionValue) {
         // Condition is falsy, skip block
@@ -721,9 +739,10 @@ export class CoreInterpreter implements Interpreter {
 
       // R-FILTER-42: per-item condition evaluation (filter pattern)
       if (block.condition) {
-        const conditionValue = await this.evaluator.evaluate(
+        const conditionValue = await resolveCondition(
           block.condition,
           currentContext,
+          this.evaluator,
         )
         if (!conditionValue) {
           currentContext.scopeChain = popScope(currentContext.scopeChain)
@@ -825,9 +844,10 @@ export class CoreInterpreter implements Interpreter {
 
       // R-FILTER-43: per-item if filtering
       if (instruction.condition) {
-        const conditionValue = await this.evaluator.evaluate(
+        const conditionValue = await resolveCondition(
           instruction.condition,
           currentContext,
+          this.evaluator,
         )
         if (!conditionValue) {
           currentContext.scopeChain = popScope(currentContext.scopeChain)

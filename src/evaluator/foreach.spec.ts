@@ -47,7 +47,7 @@ describe('ForEach Execution', () => {
 
       const parser = buildProgramParser()
       const program = parser.val(`@block/begin forEach=items -> item
-@utils/log message=item
+@utils/log message={item}
 @block/end`)
 
       const interpreter = new CoreInterpreter(registry)
@@ -63,7 +63,7 @@ describe('ForEach Execution', () => {
       context.data.items = []
 
       const source = `@block/begin forEach=items -> item
-@utils/log message=item
+@utils/log message={item}
 @block/end`
 
       const result = await runProgram(source, context)
@@ -166,7 +166,7 @@ describe('ForEach Execution', () => {
       context.data.items = ['first', 'second', 'last']
 
       const source = `@block/begin forEach=items -> item
-@utils/set input=item output=lastItem
+@utils/set input={item} output=lastItem
 @block/end`
 
       const result = await runProgram(source, context)
@@ -181,9 +181,9 @@ describe('ForEach Execution', () => {
       context.data.items = ['a', 'b']
 
       const source = `@block/begin forEach=items -> item
-@utils/set input=item output=inside
+@utils/set input={item} output=inside
 @block/end
-@utils/set input=item output=outside`
+@utils/set input={item} output=outside`
 
       // item should be undefined outside the loop
       const result = await runProgram(source, context)
@@ -380,7 +380,7 @@ describe('ForEach Execution', () => {
       context.data.notAnArray = 'string value'
 
       const source = `@block/begin forEach=notAnArray -> item
-@utils/log message=item
+@utils/log message={item}
 @block/end`
 
       await expect(runProgram(source, context)).rejects.toThrow(
@@ -393,7 +393,7 @@ describe('ForEach Execution', () => {
       context.data.nullValue = null as any
 
       const source = `@block/begin forEach=nullValue -> item
-@utils/log message=item
+@utils/log message={item}
 @block/end`
 
       await expect(runProgram(source, context)).rejects.toThrow(
@@ -406,7 +406,7 @@ describe('ForEach Execution', () => {
       context.data.num = 42
 
       const source = `@block/begin forEach=num -> item
-@utils/log message=item
+@utils/log message={item}
 @block/end`
 
       await expect(runProgram(source, context)).rejects.toThrow(

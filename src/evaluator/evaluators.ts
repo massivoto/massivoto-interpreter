@@ -72,6 +72,7 @@ export class ExpressionEvaluator {
       case 'literal-string':
       case 'literal-number':
       case 'literal-boolean':
+      case 'bare-string':
         return expr.value
 
       case 'literal-null':

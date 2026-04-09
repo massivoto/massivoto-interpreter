@@ -73,7 +73,7 @@ describe('Reserved Arguments', () => {
 
       expect(instr.condition).toBeDefined()
       expect(instr.condition).toEqual({
-        type: 'identifier',
+        type: 'bare-string',
         value: 'isVerified',
       })
     })
@@ -149,7 +149,7 @@ describe('Reserved Arguments', () => {
       const parsing = parse('@twitter/post if= isActive')
       expect(parsing.isAccepted()).toBe(true)
       expect(parsing.value.condition).toEqual({
-        type: 'identifier',
+        type: 'bare-string',
         value: 'isActive',
       })
     })
@@ -164,7 +164,7 @@ describe('Reserved Arguments', () => {
       expect(parsing.isAccepted()).toBe(true)
       const instr = parsing.value
 
-      expect(instr.condition).toEqual({ type: 'identifier', value: 'isActive' })
+      expect(instr.condition).toEqual({ type: 'bare-string', value: 'isActive' })
       expect(instr.output).toEqual({ type: 'binding', name: 'result' })
       expect(instr.args.length).toBe(1)
       expect(instr.args[0].name.value).toBe('message')
@@ -322,7 +322,7 @@ describe('Reserved Arguments', () => {
         expect(instr.label).toBe('checkpoint')
         expect(instr.output).toEqual({ type: 'binding', name: 'result' })
         expect(instr.condition).toEqual({
-          type: 'identifier',
+          type: 'bare-string',
           value: 'isActive',
         })
         expect(instr.args.length).toBe(1)

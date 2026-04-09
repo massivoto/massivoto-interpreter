@@ -44,9 +44,9 @@ describe('Logical parser', () => {
         left: {
           type: 'unary',
           operator: '!',
-          argument: { type: 'identifier', value: 'x' },
+          argument: { type: 'bare-string', value: 'x' },
         },
-        right: { type: 'identifier', value: 'a' },
+        right: { type: 'bare-string', value: 'a' },
       },
       right: { type: 'literal-boolean', value: true },
     }
@@ -64,11 +64,11 @@ describe('Logical parser', () => {
       right: {
         type: 'binary',
         operator: '!=',
-        left: { type: 'identifier', value: 'a' },
+        left: { type: 'bare-string', value: 'a' },
         right: {
           type: 'binary',
           operator: '+',
-          left: { type: 'identifier', value: 'b' },
+          left: { type: 'bare-string', value: 'b' },
           right: {
             type: 'binary',
             operator: '*',

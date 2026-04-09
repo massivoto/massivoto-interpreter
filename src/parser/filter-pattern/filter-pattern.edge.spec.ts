@@ -113,7 +113,7 @@ describe('Filter Pattern Edge Cases', () => {
       await registry.addRegistryItem('@ai/generateImage', handler)
 
       const program = parser.val(
-        '@ai/generateImage prompt=prompt forEach=prompts -> prompt if={prompt != "pit stop"} retry=2 collect=images',
+        '@ai/generateImage prompt={prompt} forEach=prompts -> prompt if={prompt != "pit stop"} retry=2 collect=images',
       )
 
       const interpreter = new CoreInterpreter(registry)
@@ -144,7 +144,7 @@ describe('Filter Pattern Edge Cases', () => {
       await registry.addRegistryItem('@ai/generateImage', handler)
 
       const program = parser.val(
-        '@ai/generateImage prompt=prompt forEach=prompts -> prompt if={prompt != "pit stop"} collect=images',
+        '@ai/generateImage prompt={prompt} forEach=prompts -> prompt if={prompt != "pit stop"} collect=images',
       )
 
       const interpreter = new CoreInterpreter(registry)
@@ -176,7 +176,7 @@ describe('Filter Pattern Edge Cases', () => {
       await registry.addRegistryItem('@ai/generateImage', handler)
 
       const program = parser.val(
-        '@ai/generateImage prompt=prompt forEach=prompts -> prompt retry=1',
+        '@ai/generateImage prompt={prompt} forEach=prompts -> prompt retry=1',
       )
 
       const interpreter = new CoreInterpreter(registry)

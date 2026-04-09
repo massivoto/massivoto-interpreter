@@ -76,7 +76,7 @@ describe('Unary parser', () => {
     const expected: UnaryExpressionNode = {
       type: 'unary',
       operator: '-',
-      argument: { type: 'identifier', value: 'count' },
+      argument: { type: 'bare-string', value: 'count' },
     }
     expect(parsing.value).toEqual(expected)
   })
@@ -88,7 +88,7 @@ describe('Unary parser', () => {
     const expected: UnaryExpressionNode = {
       type: 'unary',
       operator: '!',
-      argument: { type: 'identifier', value: 'flag' },
+      argument: { type: 'bare-string', value: 'flag' },
     }
     expect(parsing.value).toEqual(expected)
   })

@@ -207,7 +207,7 @@ describe('Flow Commands', () => {
         const source = `
           @utils/set input=true output=done
           @utils/set input=42 output=result
-          @flow/return value=result if=done
+          @flow/return value={result} if=done
           @utils/set input=0 output=result
         `
         const result = await runProgram(source)
@@ -220,7 +220,7 @@ describe('Flow Commands', () => {
         const source = `
           @utils/set input=false output=done
           @utils/set input=42 output=result
-          @flow/return value=result if=done
+          @flow/return value={result} if=done
           @utils/set input=100 output=result
         `
         const result = await runProgram(source)

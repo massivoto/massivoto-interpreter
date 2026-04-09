@@ -75,7 +75,7 @@ describe('Block parser', () => {
 
       const block = result.body[0] as BlockNode
       expect(block.condition).toBeDefined()
-      expect(block.condition?.type).toBe('identifier')
+      expect(block.condition?.type).toBe('bare-string')
     })
 
     it('parses block with if condition (expression)', () => {
