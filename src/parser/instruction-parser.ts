@@ -26,7 +26,6 @@ import {
   MapperExpressionNode,
   OutputArgNode,
   RetryArgNode,
-  SingleStringNode,
 } from './ast.js'
 import { buildActionParser } from './action/action-parser.js'
 import { createExpressionWithPipe } from './args-details/full-expression-parser.js'

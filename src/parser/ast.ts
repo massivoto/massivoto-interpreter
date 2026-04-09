@@ -12,7 +12,7 @@ import { PipeExpressionNode } from './args-details/pipe-parser/pipe-parser.js'
 export interface MapperExpressionNode {
   type: 'mapper'
   source: ExpressionNode // left side of ->
-  target: SingleStringNode // right side of ->
+  target: BareStringNode // right side of ->
 }
 
 export type LiteralNode =
@@ -59,8 +59,8 @@ export interface LogicalExpressionNode {
   alternate: ExpressionNode
 }*/
 
-export interface SingleStringNode {
-  type: 'single-string'
+export interface BareStringNode {
+  type: 'bare-string'
   value: string
 }
 
@@ -178,7 +178,7 @@ export interface IfArgNode {
 export interface ForEachArgNode {
   type: 'forEach-arg'
   iterable: ExpressionNode // left side of mapper (users, data.users, {users|filter})
-  iterator: SingleStringNode // right side of mapper (user) - variable name
+  iterator: BareStringNode // right side of mapper (user) - variable name
 }
 
 /**

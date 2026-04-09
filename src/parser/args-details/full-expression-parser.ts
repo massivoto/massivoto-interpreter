@@ -49,7 +49,7 @@ export function createExpressionWithPipe(
     .or(simpleExpression)
 
   // Wrap with mapper parser (lowest precedence)
-  // mapperExpression = baseExpression (-> singleString)?
+  // mapperExpression = baseExpression (-> bareString)?
   const fullExpression = createMapperParser(tokens, baseExpression)
 
   return fullExpression

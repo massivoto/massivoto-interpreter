@@ -27,7 +27,7 @@ describe('Mapper parser', () => {
       expect(parsing.value).toEqual({
         type: 'mapper',
         source: { type: 'identifier', value: 'users' },
-        target: { type: 'single-string', value: 'name' },
+        target: { type: 'bare-string', value: 'name' },
       })
     })
 
@@ -42,7 +42,7 @@ describe('Mapper parser', () => {
       expect(parsing.value).toEqual({
         type: 'mapper',
         source: { type: 'identifier', value: 'users' },
-        target: { type: 'single-string', value: 'name' },
+        target: { type: 'bare-string', value: 'name' },
       })
     })
   })
@@ -65,7 +65,7 @@ describe('Mapper parser', () => {
             },
           ],
         },
-        target: { type: 'single-string', value: 'id' },
+        target: { type: 'bare-string', value: 'id' },
       })
     })
 
@@ -98,7 +98,7 @@ describe('Mapper parser', () => {
           path: ['users'],
           computed: false,
         },
-        target: { type: 'single-string', value: 'email' },
+        target: { type: 'bare-string', value: 'email' },
       })
     })
 
@@ -114,13 +114,13 @@ describe('Mapper parser', () => {
           object: { type: 'identifier', value: 'response' },
           path: ['data', 'users'],
         },
-        target: { type: 'single-string', value: 'name' },
+        target: { type: 'bare-string', value: 'name' },
       })
     })
   })
 
   describe('AC-MAP-04: Parser rejects number on right side', () => {
-    it('should reject users -> 123 (right side must be SingleString)', () => {
+    it('should reject users -> 123 (right side must be BareString)', () => {
       const stream = Stream.ofChars('users -> 123')
       const parsing = grammar.thenEos().parse(stream)
 
@@ -131,7 +131,7 @@ describe('Mapper parser', () => {
   })
 
   describe('AC-MAP-05: Parser rejects dots in target', () => {
-    it('should reject users -> settings.theme (no dots in SingleString)', () => {
+    it('should reject users -> settings.theme (no dots in BareString)', () => {
       const stream = Stream.ofChars('users -> settings.theme')
       const parsing = grammar.thenEos().parse(stream)
 
@@ -166,7 +166,7 @@ describe('Mapper parser', () => {
           type: 'binary',
           operator: '+',
         },
-        target: { type: 'single-string', value: 'name' },
+        target: { type: 'bare-string', value: 'name' },
       })
     })
   })
@@ -227,7 +227,7 @@ describe('Mapper parser', () => {
       expect(parsing.value).toEqual({
         type: 'mapper',
         source: { type: 'identifier', value: 'users' },
-        target: { type: 'single-string', value: 'name' },
+        target: { type: 'bare-string', value: 'name' },
       })
     })
 
@@ -239,7 +239,7 @@ describe('Mapper parser', () => {
       expect(parsing.value).toMatchObject({
         type: 'mapper',
         source: { type: 'member' },
-        target: { type: 'single-string', value: 'email' },
+        target: { type: 'bare-string', value: 'email' },
       })
     })
   })
@@ -278,7 +278,7 @@ describe('Mapper parser', () => {
       expect(parsing.value).toMatchObject({
         type: 'mapper',
         source: { type: 'literal-string', value: 'hello' },
-        target: { type: 'single-string', value: 'value' },
+        target: { type: 'bare-string', value: 'value' },
       })
     })
 
@@ -290,7 +290,7 @@ describe('Mapper parser', () => {
       expect(parsing.value).toMatchObject({
         type: 'mapper',
         source: { type: 'array-literal' },
-        target: { type: 'single-string', value: 'value' },
+        target: { type: 'bare-string', value: 'value' },
       })
     })
 

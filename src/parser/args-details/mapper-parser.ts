@@ -3,7 +3,7 @@ import {
   ExpressionNode,
   IdentifierNode,
   MapperExpressionNode,
-  SingleStringNode,
+  BareStringNode,
 } from '../ast.js'
 import { ArgTokens } from './tokens/argument-tokens.js'
 
@@ -17,7 +17,7 @@ import { ArgTokens } from './tokens/argument-tokens.js'
  * The mapper has the LOWEST precedence in the expression hierarchy.
  * It wraps the base expression (which can be pipe, simple, or braced expression).
  *
- * Grammar: mapperExpression = baseExpression (-> singleString)?
+ * Grammar: mapperExpression = baseExpression (-> bareString)?
  *
  * Chaining is NOT allowed: `a -> b -> c` is invalid.
  */
@@ -27,22 +27,22 @@ export function createMapperParser(
 ): SingleParser<ExpressionNode> {
   const { ARROW, IDENTIFIER } = tokens
 
-  // SingleString uses the same syntax as identifier but produces a different node type.
-  // We use IDENTIFIER token (genlex-compatible) and map to SingleStringNode.
-  const singleString: SingleParser<SingleStringNode> = IDENTIFIER.map(
-    (id: IdentifierNode): SingleStringNode => ({
-      type: 'single-string',
+  // BareString uses the same syntax as identifier but produces a different node type.
+  // We use IDENTIFIER token (genlex-compatible) and map to BareStringNode.
+  const bareString: SingleParser<BareStringNode> = IDENTIFIER.map(
+    (id: IdentifierNode): BareStringNode => ({
+      type: 'bare-string',
       value: id.value,
     }),
   )
 
-  // Parse: baseExpression ARROW singleString (produces MapperExpressionNode)
+  // Parse: baseExpression ARROW bareString (produces MapperExpressionNode)
   const mapperExpression = baseExpression
     .then(ARROW.drop())
-    .then(singleString)
-    .map((tuple: Tuple<ExpressionNode | SingleStringNode>) => {
+    .then(bareString)
+    .map((tuple: Tuple<ExpressionNode | BareStringNode>) => {
       const source = tuple.first() as ExpressionNode
-      const target = tuple.last() as SingleStringNode
+      const target = tuple.last() as BareStringNode
       return {
         type: 'mapper',
         source,

@@ -20,7 +20,7 @@ describe('ForEach Block Integration', () => {
       const forEach = block.forEach as ForEachArgNode
       expect(forEach.type).toBe('forEach-arg')
       expect(forEach.iterable).toEqual({ type: 'identifier', value: 'users' })
-      expect(forEach.iterator).toEqual({ type: 'single-string', value: 'user' })
+      expect(forEach.iterator).toEqual({ type: 'bare-string', value: 'user' })
     })
 
     it('parses block with forEach and name', () => {
@@ -83,7 +83,7 @@ describe('ForEach Block Integration', () => {
 
       const forEach = block.forEach as ForEachArgNode
       expect(forEach.iterable).toEqual({ type: 'identifier', value: 'users' })
-      expect(forEach.iterator).toEqual({ type: 'single-string', value: 'user' })
+      expect(forEach.iterator).toEqual({ type: 'bare-string', value: 'user' })
       expect(block.condition?.type).toBe('member')
     })
 

@@ -27,7 +27,7 @@ describe('ForEach Reserved Argument', () => {
       const forEach = instr.forEach as ForEachArgNode
       expect(forEach.type).toBe('forEach-arg')
       expect(forEach.iterable).toEqual({ type: 'identifier', value: 'users' })
-      expect(forEach.iterator).toEqual({ type: 'single-string', value: 'user' })
+      expect(forEach.iterator).toEqual({ type: 'bare-string', value: 'user' })
     })
 
     it('parses forEach=data.users -> user (member expression iterable)', () => {
@@ -122,7 +122,7 @@ describe('ForEach Reserved Argument', () => {
       expect(instr.forEach).toEqual({
         type: 'forEach-arg',
         iterable: { type: 'identifier', value: 'users' },
-        iterator: { type: 'single-string', value: 'user' },
+        iterator: { type: 'bare-string', value: 'user' },
       })
     })
 
