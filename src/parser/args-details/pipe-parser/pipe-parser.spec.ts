@@ -1,8 +1,9 @@
 import { GenlexTracer, Stream, TracingGenLex } from '@masala/parser'
 import { describe, it, expect } from 'vitest'
-import { createSimpleExpressionWithParenthesesParser } from '../simple-expression-parser.js'
+import { createSimpleExpressionParser, createSimpleExpressionWithParenthesesParser } from '../simple-expression-parser.js'
 import { createArgumentTokens } from '../tokens/argument-tokens.js'
-import { createPipeParser } from './pipe-parser.js'
+import { atomicParser } from '../tokens/literals-parser.js'
+import { createBarePipeParser, createPipeParser } from './pipe-parser.js'
 
 let tracer: GenlexTracer
 
@@ -13,6 +14,16 @@ function createPipeGrammar() {
   const expressionParser = createSimpleExpressionWithParenthesesParser(tokens)
   const pipeParser = createPipeParser(tokens, expressionParser)
   return genlex.use(pipeParser)
+}
+
+function createBarePipeGrammar() {
+  const genlex = new TracingGenLex()
+  const tokens = createArgumentTokens(genlex)
+  tracer = genlex.tracer
+  const bareAtomic = atomicParser(tokens)
+  const bareSimple = createSimpleExpressionParser(tokens, bareAtomic)
+  const barePipeParser = createBarePipeParser(tokens, bareSimple)
+  return genlex.use(barePipeParser)
 }
 
 describe('Pipe parser', () => {
@@ -165,6 +176,123 @@ describe('Pipe parser', () => {
 
     stream = Stream.ofChars('{ | pipe1:arg1 | pipe2 }')
     parsing = pipeGrammar.parse(stream)
+    expect(parsing.isAccepted()).toBe(false)
+  })
+})
+
+// R-BPIPE-21: Bare pipe parser tests
+describe('Bare pipe parser', () => {
+  const barePipeGrammar = createBarePipeGrammar()
+
+  // AC-BPIPE-01: hello|uppercase -> PipeExpressionNode with BareStringNode input
+  it('should parse a bare string piped through a single pipe', () => {
+    const stream = Stream.ofChars('hello|uppercase')
+    const parsing = barePipeGrammar.parse(stream)
+
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'pipe-expression',
+      input: { type: 'bare-string', value: 'hello' },
+      segments: [{ pipeName: 'uppercase', args: [] }],
+    })
+  })
+
+  // AC-BPIPE-03: hello|upper|trim -> chained segments
+  it('should parse chained bare pipes', () => {
+    const stream = Stream.ofChars('hello|upper|trim')
+    const parsing = barePipeGrammar.parse(stream)
+
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'pipe-expression',
+      input: { type: 'bare-string', value: 'hello' },
+      segments: [
+        { pipeName: 'upper', args: [] },
+        { pipeName: 'trim', args: [] },
+      ],
+    })
+  })
+
+  // AC-BPIPE-04: hello|pad:10 -> segment with number argument
+  it('should parse bare pipe with number argument', () => {
+    const stream = Stream.ofChars('hello|pad:10')
+    const parsing = barePipeGrammar.parse(stream)
+
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'pipe-expression',
+      input: { type: 'bare-string', value: 'hello' },
+      segments: [
+        {
+          pipeName: 'pad',
+          args: [{ type: 'literal-number', value: 10 }],
+        },
+      ],
+    })
+  })
+
+  it('should parse bare pipe with multiple arguments', () => {
+    const stream = Stream.ofChars('hello|replace:world:earth')
+    const parsing = barePipeGrammar.parse(stream)
+
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'pipe-expression',
+      input: { type: 'bare-string', value: 'hello' },
+      segments: [
+        {
+          pipeName: 'replace',
+          args: [
+            { type: 'bare-string', value: 'world' },
+            { type: 'bare-string', value: 'earth' },
+          ],
+        },
+      ],
+    })
+  })
+
+  // AC-BPIPE-06: 42|toString -> number literal input
+  it('should parse number literal piped through a pipe', () => {
+    const stream = Stream.ofChars('42|toString')
+    const parsing = barePipeGrammar.parse(stream)
+
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'pipe-expression',
+      input: { type: 'literal-number', value: 42 },
+      segments: [{ pipeName: 'toString', args: [] }],
+    })
+  })
+
+  // AC-BPIPE-07: $index|toString -> system variable input
+  it('should parse system variable piped through a pipe', () => {
+    const stream = Stream.ofChars('$index|toString')
+    const parsing = barePipeGrammar.parse(stream)
+
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'pipe-expression',
+      input: { type: 'system-variable', name: 'index' },
+      segments: [{ pipeName: 'toString', args: [] }],
+    })
+  })
+
+  it('should parse boolean literal piped through a pipe', () => {
+    const stream = Stream.ofChars('true|toString')
+    const parsing = barePipeGrammar.parse(stream)
+
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'pipe-expression',
+      input: { type: 'literal-boolean', value: true },
+      segments: [{ pipeName: 'toString', args: [] }],
+    })
+  })
+
+  it('should NOT parse a bare expression without pipe', () => {
+    const stream = Stream.ofChars('hello')
+    const parsing = barePipeGrammar.parse(stream)
+
     expect(parsing.isAccepted()).toBe(false)
   })
 })

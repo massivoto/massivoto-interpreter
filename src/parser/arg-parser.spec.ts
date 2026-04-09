@@ -119,3 +119,68 @@ describe('It should accept a pipe expression', () => {
     })
   })
 })
+
+// R-BPIPE-22: Bare pipe integration at arg level
+describe('Bare pipe expressions in arguments', () => {
+  // AC-BPIPE-01: arg=hello|uppercase -> PipeExpressionNode with BareStringNode input
+  it('should accept a bare pipe expression', () => {
+    let stream = Stream.ofChars(`arg=hello|uppercase`)
+    let parsing = buildArgParserForTests().parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'argument',
+      name: { type: 'identifier', value: 'arg' },
+      value: {
+        type: 'pipe-expression',
+        input: { type: 'bare-string', value: 'hello' },
+        segments: [{ pipeName: 'uppercase', args: [] }],
+      },
+    })
+  })
+
+  // AC-BPIPE-05: arg={value|uppercase} -> braced pipe, IdentifierNode input (no regression)
+  it('should still accept braced pipe expression with IdentifierNode input', () => {
+    let stream = Stream.ofChars(`arg={value|uppercase}`)
+    let parsing = buildArgParserForTests().parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'argument',
+      name: { type: 'identifier', value: 'arg' },
+      value: {
+        type: 'pipe-expression',
+        input: { type: 'identifier', value: 'value' },
+        segments: [{ pipeName: 'uppercase', args: [] }],
+      },
+    })
+  })
+
+  // AC-BPIPE-08: arg=hello (no pipe) -> BareStringNode, no regression from Step 3
+  it('should still accept bare string without pipe', () => {
+    let stream = Stream.ofChars(`arg=hello`)
+    let parsing = buildArgParserForTests().parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'argument',
+      name: { type: 'identifier', value: 'arg' },
+      value: { type: 'bare-string', value: 'hello' },
+    })
+  })
+
+  it('should accept bare pipe with chained pipes', () => {
+    let stream = Stream.ofChars(`arg=hello|upper|trim`)
+    let parsing = buildArgParserForTests().parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'argument',
+      name: { type: 'identifier', value: 'arg' },
+      value: {
+        type: 'pipe-expression',
+        input: { type: 'bare-string', value: 'hello' },
+        segments: [
+          { pipeName: 'upper', args: [] },
+          { pipeName: 'trim', args: [] },
+        ],
+      },
+    })
+  })
+})

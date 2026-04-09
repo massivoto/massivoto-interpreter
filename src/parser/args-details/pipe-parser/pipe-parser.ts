@@ -52,3 +52,41 @@ export function createPipeParser(
 
   return pipeParser
 }
+
+// R-BPIPE-01: Bare pipe parser -- same pipe segment grammar, no braces required
+export function createBarePipeParser(
+  tokens: ArgTokens,
+  bareSimpleExpression: SingleParser<SimpleExpressionNode>,
+): SingleParser<PipeExpressionNode> {
+  const { PIPE, COLON, IDENTIFIER } = tokens
+  const pipeName = IDENTIFIER.map((t) => t.value)
+
+  const pipeArgument = COLON.drop()
+    .then(bareSimpleExpression)
+    .map((t) => t.single())
+  const pipeSegment: SingleParser<PipeSegment> = PIPE.drop()
+    .then(pipeName)
+    .then(pipeArgument.optrep())
+    .map((t: MixedTuple<string, SimpleExpressionNode>) => {
+      const pipeName = t.first()
+      const args = t.array().slice(1) as SimpleExpressionNode[]
+      return {
+        pipeName,
+        args,
+      }
+    })
+
+  const barePipeParser: SingleParser<PipeExpressionNode> = bareSimpleExpression
+    .then(pipeSegment.rep())
+    .map((t: MixedTuple<SimpleExpressionNode, PipeSegment[]>) => {
+      const input = t.first()
+      const segments = t.array().slice(1) as PipeSegment[]
+      return {
+        type: 'pipe-expression',
+        input,
+        segments,
+      } as PipeExpressionNode
+    })
+
+  return barePipeParser
+}

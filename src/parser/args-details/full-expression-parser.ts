@@ -3,6 +3,7 @@ import { ExpressionNode, SimpleExpressionNode } from '../ast.js'
 import { createArrayParser } from './array-parser.js'
 import { createMapperParser } from './mapper-parser.js'
 import {
+  createBarePipeParser,
   createPipeParser,
   PipeExpressionNode,
 } from './pipe-parser/pipe-parser.js'
@@ -66,9 +67,15 @@ export function createExpressionWithPipe(
   const bareSimpleExpression: SingleParser<SimpleExpressionNode> =
     createSimpleExpressionParser(tokens, barePrimary)
 
-  // In bare context, pipes are accessed through bracedExpression (which includes bracedPipeExpression).
-  // We also try bracedPipeExpression at the top level for direct {expr|pipe} syntax.
+  // R-BPIPE-01: Bare pipe parser for value|pipe syntax outside braces
+  const barePipeExpression: SingleParser<PipeExpressionNode> = createBarePipeParser(
+    tokens,
+    bareSimpleExpression,
+  )
+
+  // R-BPIPE-02: Expression ladder -- braced pipe, then bare pipe, then bare simple
   const bareBaseExpression: SingleParser<ExpressionNode> = F.try(bracedPipeExpression)
+    .or(F.try(barePipeExpression))
     .or(bareSimpleExpression)
 
   const bareFullExpression = createMapperParser(tokens, bareBaseExpression)

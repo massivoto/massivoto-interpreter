@@ -2327,4 +2327,50 @@ describe('ExpressionEvaluator - Pipe Expressions', () => {
       )
     })
   })
+
+  // R-BPIPE-23: Bare pipe evaluator tests -- BareStringNode as pipe input
+  describe('R-BPIPE-11: Bare string pipe evaluation', () => {
+    // AC-BPIPE-02: BareStringNode("hello") piped through length -> 5
+    it('should evaluate BareStringNode through length pipe', async () => {
+      const expr: PipeExpressionNode = {
+        type: 'pipe-expression',
+        input: { type: 'bare-string', value: 'hello' },
+        segments: [{ pipeName: 'length', args: [] }],
+      }
+      const result = await pipeEvaluator.evaluate(expr, usersContext)
+      expect(result).toBe(5)
+    })
+
+    it('should evaluate BareStringNode through chained pipes', async () => {
+      const expr: PipeExpressionNode = {
+        type: 'pipe-expression',
+        input: { type: 'bare-string', value: 'hello world' },
+        segments: [
+          { pipeName: 'length', args: [] },
+        ],
+      }
+      const result = await pipeEvaluator.evaluate(expr, usersContext)
+      expect(result).toBe(11)
+    })
+
+    it('should evaluate BareStringNode through reverse then length', async () => {
+      const expr: PipeExpressionNode = {
+        type: 'pipe-expression',
+        input: {
+          type: 'array-literal',
+          elements: [
+            { type: 'bare-string', value: 'a' },
+            { type: 'bare-string', value: 'b' },
+            { type: 'bare-string', value: 'c' },
+          ],
+        },
+        segments: [
+          { pipeName: 'reverse', args: [] },
+          { pipeName: 'length', args: [] },
+        ],
+      }
+      const result = await pipeEvaluator.evaluate(expr, usersContext)
+      expect(result).toBe(3)
+    })
+  })
 })
