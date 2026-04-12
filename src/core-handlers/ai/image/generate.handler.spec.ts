@@ -224,7 +224,7 @@ describe('GenerateImageHandler', () => {
 
   // AC-GEN-06: model tier resolution
   describe('R-GEN-61: model tier resolution', () => {
-    it('should resolve "best" to gemini-2.0-flash', async () => {
+    it('should resolve "best" to gemini-2.5-flash', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
       context.env = { GEMINI_API_KEY: 'test-key' }
@@ -239,7 +239,7 @@ describe('GenerateImageHandler', () => {
       expect(result.success).toBe(true)
     })
 
-    it('should resolve "light" to gemini-2.0-flash-lite', async () => {
+    it('should resolve "light" to gemini-2.5-flash-lite', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
       context.env = { GEMINI_API_KEY: 'test-key' }
@@ -262,7 +262,7 @@ describe('GenerateImageHandler', () => {
       handler.setProvider('gemini', mockProvider)
 
       const result = await handler.run(
-        { prompt: 'A portrait', model: 'gemini-2.0-flash-lite' },
+        { prompt: 'A portrait', model: 'gemini-2.5-flash-lite' },
         context,
       )
 

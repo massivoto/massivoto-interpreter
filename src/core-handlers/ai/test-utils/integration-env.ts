@@ -9,10 +9,21 @@ import { config as dotenvConfig } from 'dotenv'
  * Cleans up after the test.
  */
 
-const ROOT_ENV_PATH = path.resolve(
+const INTERPRETER_ENV_PATH = path.resolve(
   import.meta.dirname ?? __dirname,
   '../../../../.env',
 )
+
+const PROJECT_ENV_PATH = path.resolve(
+  import.meta.dirname ?? __dirname,
+  '../../../../../.env',
+)
+
+function findEnvPath(): string {
+  if (fs.existsSync(INTERPRETER_ENV_PATH)) return INTERPRETER_ENV_PATH
+  if (fs.existsSync(PROJECT_ENV_PATH)) return PROJECT_ENV_PATH
+  return INTERPRETER_ENV_PATH
+}
 
 interface IntegrationEnvOptions {
   keys: string[]
@@ -23,7 +34,7 @@ export class IntegrationEnv {
   private tempDir: string | undefined
   private envPath: string | undefined
 
-  constructor(private readonly rootEnvPath: string = ROOT_ENV_PATH) {}
+  constructor(private readonly rootEnvPath: string = findEnvPath()) {}
 
   hasRootEnv(): boolean {
     return fs.existsSync(this.rootEnvPath)
@@ -87,7 +98,7 @@ export class IntegrationEnv {
   }
 }
 
-export function skipIfNoRootEnv(rootEnvPath: string = ROOT_ENV_PATH): boolean {
+export function skipIfNoRootEnv(rootEnvPath: string = findEnvPath()): boolean {
   if (!fs.existsSync(rootEnvPath)) {
     console.log(
       'Skipping integration tests: no API keys found in root .env. See env.dist for setup.',

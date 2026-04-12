@@ -161,7 +161,7 @@ describe('ReverseImageHandler', () => {
 
   // AC-RIMG-01, AC-RIMG-02
   describe('R-RIMG-103: model tier resolution', () => {
-    it('should resolve "best" to gemini-2.0-flash', async () => {
+    it('should resolve "best" to gemini-2.5-flash', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
       context.env = { GEMINI_API_KEY: 'test-key' }
@@ -171,10 +171,10 @@ describe('ReverseImageHandler', () => {
       await handler.run({ image: FAKE_BASE64_IMAGE, model: 'best' }, context)
 
       const call = (mockProvider.analyzeImage as ReturnType<typeof vi.fn>).mock.calls[0][0]
-      expect(call.model).toBe('gemini-2.0-flash')
+      expect(call.model).toBe('gemini-2.5-flash')
     })
 
-    it('should resolve "light" to gemini-2.0-flash-lite', async () => {
+    it('should resolve "light" to gemini-2.5-flash', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
       context.env = { GEMINI_API_KEY: 'test-key' }
@@ -184,7 +184,7 @@ describe('ReverseImageHandler', () => {
       await handler.run({ image: FAKE_BASE64_IMAGE, model: 'light' }, context)
 
       const call = (mockProvider.analyzeImage as ReturnType<typeof vi.fn>).mock.calls[0][0]
-      expect(call.model).toBe('gemini-2.0-flash-lite')
+      expect(call.model).toBe('gemini-2.5-flash')
     })
 
     it('should pass raw model ID through unchanged', async () => {
@@ -195,12 +195,12 @@ describe('ReverseImageHandler', () => {
       handler.setProvider('gemini', mockProvider)
 
       await handler.run(
-        { image: FAKE_BASE64_IMAGE, model: 'gemini-2.0-flash-lite' },
+        { image: FAKE_BASE64_IMAGE, model: 'gemini-2.5-flash' },
         context,
       )
 
       const call = (mockProvider.analyzeImage as ReturnType<typeof vi.fn>).mock.calls[0][0]
-      expect(call.model).toBe('gemini-2.0-flash-lite')
+      expect(call.model).toBe('gemini-2.5-flash')
     })
 
     it('should default to "best" when no model arg is provided', async () => {
@@ -213,7 +213,7 @@ describe('ReverseImageHandler', () => {
       await handler.run({ image: FAKE_BASE64_IMAGE }, context)
 
       const call = (mockProvider.analyzeImage as ReturnType<typeof vi.fn>).mock.calls[0][0]
-      expect(call.model).toBe('gemini-2.0-flash')
+      expect(call.model).toBe('gemini-2.5-flash')
     })
   })
 

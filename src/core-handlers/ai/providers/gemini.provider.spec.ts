@@ -240,7 +240,7 @@ describe('GeminiProvider', () => {
       await provider.generateText({ prompt: 'Hello' })
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('gemini-1.5-pro'),
+        expect.stringContaining('gemini-2.5-flash'),
         expect.any(Object),
       )
     })
@@ -426,7 +426,7 @@ describe('GeminiProvider', () => {
       )
     })
 
-    it('should use gemini-2.0-flash as default vision model', async () => {
+    it('should use gemini-2.5-flash as default vision model', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () =>
@@ -449,7 +449,7 @@ describe('GeminiProvider', () => {
       })
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('gemini-2.0-flash'),
+        expect.stringContaining('gemini-2.5-flash'),
         expect.any(Object),
       )
     })
@@ -474,11 +474,11 @@ describe('GeminiProvider', () => {
       await provider.analyzeImage({
         image: 'iVBORw0KGgoAAAANSUhEUg==',
         prompt: 'Analyze this',
-        model: 'gemini-2.0-flash-lite',
+        model: 'gemini-2.5-flash-lite',
       })
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('gemini-2.0-flash-lite'),
+        expect.stringContaining('gemini-2.5-flash-lite'),
         expect.any(Object),
       )
     })

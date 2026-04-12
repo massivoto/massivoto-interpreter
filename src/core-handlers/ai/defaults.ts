@@ -7,8 +7,8 @@ export const AI_IMAGE_DEFAULTS = {
 
 // R-GEN-02: Gemini model tier aliases
 export const GEMINI_MODEL_TIERS: Record<string, string> = {
-  best: 'gemini-2.0-flash',
-  light: 'gemini-2.0-flash-lite',
+  best: 'gemini-2.5-flash',
+  light: 'gemini-2.5-flash',
 }
 
 // R-GEN-02: Resolve model alias to concrete model ID

@@ -16,30 +16,30 @@ describe('AI_IMAGE_DEFAULTS (R-GEN-01)', () => {
 })
 
 describe('GEMINI_MODEL_TIERS (R-GEN-02)', () => {
-  it('should map best to gemini-2.0-flash', () => {
-    expect(GEMINI_MODEL_TIERS.best).toBe('gemini-2.0-flash')
+  it('should map best to gemini-2.5-flash', () => {
+    expect(GEMINI_MODEL_TIERS.best).toBe('gemini-2.5-flash')
   })
 
-  it('should map light to gemini-2.0-flash-lite', () => {
-    expect(GEMINI_MODEL_TIERS.light).toBe('gemini-2.0-flash-lite')
+  it('should map light to gemini-2.5-flash', () => {
+    expect(GEMINI_MODEL_TIERS.light).toBe('gemini-2.5-flash')
   })
 })
 
 describe('resolveModel (R-GEN-02)', () => {
-  it('should resolve "best" to gemini-2.0-flash for gemini provider', () => {
-    expect(resolveModel('best', 'gemini')).toBe('gemini-2.0-flash')
+  it('should resolve "best" to gemini-2.5-flash for gemini provider', () => {
+    expect(resolveModel('best', 'gemini')).toBe('gemini-2.5-flash')
   })
 
-  it('should resolve "light" to gemini-2.0-flash-lite for gemini provider', () => {
-    expect(resolveModel('light', 'gemini')).toBe('gemini-2.0-flash-lite')
+  it('should resolve "light" to gemini-2.5-flash for gemini provider', () => {
+    expect(resolveModel('light', 'gemini')).toBe('gemini-2.5-flash')
   })
 
   it('should pass raw model ID through unchanged for gemini provider', () => {
-    expect(resolveModel('gemini-2.0-flash-lite', 'gemini')).toBe('gemini-2.0-flash-lite')
+    expect(resolveModel('gemini-2.5-flash', 'gemini')).toBe('gemini-2.5-flash')
   })
 
-  it('should default to "best" (gemini-2.0-flash) when model is undefined', () => {
-    expect(resolveModel(undefined, 'gemini')).toBe('gemini-2.0-flash')
+  it('should default to "best" (gemini-2.5-flash) when model is undefined', () => {
+    expect(resolveModel(undefined, 'gemini')).toBe('gemini-2.5-flash')
   })
 
   it('should pass through alias unchanged for non-gemini provider', () => {

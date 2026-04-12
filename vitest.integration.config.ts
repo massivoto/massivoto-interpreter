@@ -1,5 +1,13 @@
 import { defineConfig } from 'vitest/config'
 import path from 'path'
+import fs from 'fs'
+import { config as dotenvConfig } from 'dotenv'
+
+const interpreterEnv = path.resolve(__dirname, '.env')
+const projectEnv = path.resolve(__dirname, '../.env')
+const envPath = fs.existsSync(interpreterEnv) ? interpreterEnv : projectEnv
+
+dotenvConfig({ path: envPath })
 
 export default defineConfig({
   resolve: {

@@ -54,7 +54,16 @@ class ReverseImageAnalyser {
 
   getOutput(varName: string): string {
     if (!this.lastResult) throw new Error('No result available, call run() first')
-    return this.lastResult.context.data[varName] as string
+    const value = this.lastResult.context.data[varName] as string
+    if (value === undefined) {
+      const actions = this.lastResult.batches.flatMap(b => b.actions)
+      const failed = actions.find(a => !a.success)
+      const hint = failed
+        ? `Command ${failed.command} failed: ${failed.fatalError ?? failed.messages?.join(', ')}`
+        : 'No failed action found, but output was not stored'
+      throw new Error(`Output "${varName}" is undefined. ${hint}`)
+    }
+    return value
   }
 }
 
@@ -84,7 +93,7 @@ describe('ReverseImageHandler - file-based dummy pipeline', () => {
 
     const result = await analyser
       .withVar('photo', photo)
-      .run('@ai/prompt/reverseImage image=photo model="dummy" output=prompt')
+      .run('@ai/prompt/reverseImage image={photo} model="dummy" output=prompt')
 
     expect(result.exitCode).toBe(0)
     const output = analyser.getOutput('prompt')
@@ -97,7 +106,7 @@ describe('ReverseImageHandler - file-based dummy pipeline', () => {
 
     const result = await analyser
       .withVar('portrait', photo)
-      .run('@ai/prompt/reverseImage image=portrait model="dummy" output=prompt')
+      .run('@ai/prompt/reverseImage image={portrait} model="dummy" output=prompt')
 
     expect(result.exitCode).toBe(0)
     const output = analyser.getOutput('prompt')
@@ -140,14 +149,14 @@ describe.skipIf(!process.env.GEMINI_API_KEY)(
       expect(prompt.length).toBeGreaterThan(50)
     }, 30_000)
 
-    it('should include {{variation}} in the generated prompt', async () => {
+    it('should include a {{...}} placeholder in the generated prompt', async () => {
       const result = await analyser.run(
         `@ai/prompt/reverseImage image="${TINY_PNG_BASE64}" output=variationPrompt`,
       )
 
       expect(result.exitCode).toBe(0)
       const prompt = analyser.getOutput('variationPrompt')
-      expect(prompt).toContain('{{variation}}')
+      expect(prompt).toMatch(/\{\{.+?\}\}/)
     }, 30_000)
 
     it('should reverse-prompt from a real PNG file with correct mimeType', async () => {
@@ -155,7 +164,7 @@ describe.skipIf(!process.env.GEMINI_API_KEY)(
 
       const result = await analyser
         .withVar('photo', photo)
-        .run('@ai/prompt/reverseImage image=photo output=filePrompt')
+        .run('@ai/prompt/reverseImage image={photo} output=filePrompt')
 
       expect(result.exitCode).toBe(0)
       const prompt = analyser.getOutput('filePrompt')
@@ -167,11 +176,27 @@ describe.skipIf(!process.env.GEMINI_API_KEY)(
 
       const result = await analyser
         .withVar('portrait', portrait)
-        .run('@ai/prompt/reverseImage image=portrait focus="portrait style" output=jpegPrompt')
+        .run('@ai/prompt/reverseImage image={portrait} focus="portrait style" output=jpegPrompt')
 
       expect(result.exitCode).toBe(0)
       const prompt = analyser.getOutput('jpegPrompt')
       expect(prompt.length).toBeGreaterThan(50)
     }, 30_000)
+
+    it('should produce a detailed reverse-prompt from bunny.png with variation placeholder', async () => {
+      const bunny = await readFile(join(FIXTURES_DIR, 'bunny.png'))
+
+      const result = await analyser
+        .withVar('bunny', bunny)
+        .run('@ai/prompt/reverseImage image={bunny} focus="animal subject" output=bunnyPrompt')
+
+      expect(result.exitCode).toBe(0)
+      const prompt = analyser.getOutput('bunnyPrompt')
+      expect(prompt).toContain('{{variation}}')
+      expect(prompt.length).toBeGreaterThan(100)
+      // The prompt should describe the scene context (grass, green, natural)
+      const lower = prompt.toLowerCase()
+      expect(lower).toMatch(/green|grass|natural|fur|animal/)
+    }, 60_000)
   },
 )
