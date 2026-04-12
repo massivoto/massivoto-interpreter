@@ -11,11 +11,10 @@
  * R-GEN-25: API key from context.env or process.env
  */
 import type { AiProvider, AiProviderName, ImageRequest } from '@massivoto/kit'
-import { resolveProvider } from '@massivoto/auth-domain'
 import { AI_IMAGE_DEFAULTS, resolveModel } from '../defaults.js'
-import { createAiProvider } from '../providers/create-ai-provider.js'
 import { ActionResult, ExecutionContext } from '@massivoto/kit'
 import { BaseCommandHandler } from '../../../handlers/index.js'
+import { AiProviderRegistry } from '../providers/ai-provider-registry.js'
 
 // R-GEN-92: Minimal valid 1x1 transparent PNG (67 bytes)
 const DUMMY_PNG_BASE64 =
@@ -29,15 +28,16 @@ export class GenerateImageHandler extends BaseCommandHandler<string> {
   readonly type = 'command' as const
   override readonly acceptedProviders = IMAGE_ACCEPTED_PROVIDERS
 
-  private providers: Map<string, AiProvider> = new Map()
+  private registry: AiProviderRegistry
 
-  constructor() {
+  constructor(registry?: AiProviderRegistry) {
     super('@ai/image/generate')
+    this.registry = registry ?? new AiProviderRegistry()
   }
 
-  // R-AIC-63: test hook remains
+  // R-PC-08: backward-compatible test hook delegates to registry
   setProvider(name: string, provider: AiProvider): void {
-    this.providers.set(name, provider)
+    this.registry.set(name, provider)
   }
 
   // R-GEN-92: Static dummy image for testing and CI
@@ -66,9 +66,9 @@ export class GenerateImageHandler extends BaseCommandHandler<string> {
     }
 
     try {
-      // R-AIC-43: Use centralized resolution
+      // R-PC-05: Use centralized registry instead of duplicated provider logic
       const providerName = 'gemini' as AiProviderName
-      const provider = this.getOrCreateProvider(providerName, context)
+      const provider = this.registry.get(providerName, this.acceptedProviders!, context)
 
       // R-GEN-61: Resolve model tier alias
       resolveModel(modelArg, providerName)
@@ -97,43 +97,5 @@ export class GenerateImageHandler extends BaseCommandHandler<string> {
       const errorMessage = error instanceof Error ? error.message : String(error)
       return this.handleFailure(errorMessage, errorMessage)
     }
-  }
-
-  private getOrCreateProvider(
-    providerName: AiProviderName,
-    context: ExecutionContext,
-  ): AiProvider {
-    const cached = this.providers.get(providerName)
-    if (cached) return cached
-
-    if (context.aiConfig) {
-      const resolved = resolveProvider(context.aiConfig, this.acceptedProviders!)
-      const provider = createAiProvider(resolved.name, resolved.apiKey)
-      this.providers.set(resolved.name, provider)
-      return provider
-    }
-
-    return this.fallbackCreateProvider(providerName, context)
-  }
-
-  private fallbackCreateProvider(
-    providerName: AiProviderName,
-    context: ExecutionContext,
-  ): AiProvider {
-    const keyMap: Record<string, string> = {
-      gemini: 'GEMINI_API_KEY',
-      openai: 'OPENAI_API_KEY',
-      anthropic: 'ANTHROPIC_API_KEY',
-    }
-    const keyName = keyMap[providerName]
-    const apiKey = context.env?.[keyName] || process.env[keyName]
-    if (!apiKey) {
-      throw new Error(
-        `Missing ${keyName} environment variable. Copy env.dist to .env and add your API key.`,
-      )
-    }
-    const provider = createAiProvider(providerName, apiKey)
-    this.providers.set(providerName, provider)
-    return provider
   }
 }

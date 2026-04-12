@@ -10,10 +10,9 @@
  * R-AI-14: Return cost metadata (tokens used) in instruction result
  */
 import type { AiProvider, AiProviderName } from '@massivoto/kit'
-import { resolveProvider } from '@massivoto/auth-domain'
-import { createAiProvider } from './providers/create-ai-provider.js'
 import type { ActionResult, ExecutionContext } from '@massivoto/kit'
 import { BaseCommandHandler } from '../../handlers/index.js'
+import { AiProviderRegistry } from './providers/ai-provider-registry.js'
 
 // R-AIC-42: TextHandler accepts gemini (openai/anthropic future)
 const TEXT_ACCEPTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']
@@ -22,15 +21,16 @@ export class TextHandler extends BaseCommandHandler<string> {
   readonly type = 'command' as const
   override readonly acceptedProviders = TEXT_ACCEPTED_PROVIDERS
 
-  private providers: Map<string, AiProvider> = new Map()
+  private registry: AiProviderRegistry
 
-  constructor() {
+  constructor(registry?: AiProviderRegistry) {
     super('@ai/text')
+    this.registry = registry ?? new AiProviderRegistry()
   }
 
-  // R-AIC-63: test hook remains for unit testing
+  // R-PC-08: backward-compatible test hook delegates to registry
   setProvider(name: string, provider: AiProvider): void {
-    this.providers.set(name, provider)
+    this.registry.set(name, provider)
   }
 
   async run(
@@ -50,8 +50,8 @@ export class TextHandler extends BaseCommandHandler<string> {
     const model: string | undefined = args.model
 
     try {
-      // R-AIC-43: Use centralized resolution instead of duplicated getApiKey/createProvider
-      const provider = this.getOrCreateProvider(args.provider, context)
+      // R-PC-04: Use centralized registry instead of duplicated provider logic
+      const provider = this.registry.get(args.provider, this.acceptedProviders!, context)
 
       // R-AI-12: Prompt expression resolution is done by interpreter before handler
       const result = await provider.generateText({
@@ -77,63 +77,5 @@ export class TextHandler extends BaseCommandHandler<string> {
         error instanceof Error ? error.message : String(error)
       return this.handleFailure(errorMessage, errorMessage)
     }
-  }
-
-  private getOrCreateProvider(
-    providerArg: string | undefined,
-    context: ExecutionContext,
-  ): AiProvider {
-    // If a test-injected provider exists, use it
-    const resolvedName = providerArg ?? this.resolveProviderName(context)
-    const cached = this.providers.get(resolvedName)
-    if (cached) return cached
-
-    // Use centralized resolution from auth-domain
-    if (!context.aiConfig) {
-      // Fallback for backward compatibility: build config from context.env
-      return this.fallbackCreateProvider(resolvedName, context)
-    }
-
-    const resolved = resolveProvider(context.aiConfig, this.acceptedProviders!)
-    const provider = createAiProvider(resolved.name, resolved.apiKey)
-    this.providers.set(resolved.name, provider)
-    return provider
-  }
-
-  private resolveProviderName(context: ExecutionContext): string {
-    if (context.aiConfig && context.aiConfig.providers.length > 0) {
-      const resolved = resolveProvider(context.aiConfig, this.acceptedProviders!)
-      return resolved.name
-    }
-    return 'gemini'
-  }
-
-  private fallbackCreateProvider(
-    providerName: string,
-    context: ExecutionContext,
-  ): AiProvider {
-    const validProviders: AiProviderName[] = ['gemini', 'openai', 'anthropic']
-    if (!validProviders.includes(providerName as AiProviderName)) {
-      throw new Error(
-        `Unknown provider "${providerName}". Valid options: ${validProviders.join(', ')}`,
-      )
-    }
-
-    const keyMap: Record<string, string> = {
-      gemini: 'GEMINI_API_KEY',
-      openai: 'OPENAI_API_KEY',
-      anthropic: 'ANTHROPIC_API_KEY',
-    }
-    const keyName = keyMap[providerName]
-    const apiKey = context.env?.[keyName] || process.env[keyName]
-    if (!apiKey) {
-      throw new Error(
-        `Missing ${keyName} environment variable. Copy env.dist to .env and add your API key.`,
-      )
-    }
-
-    const provider = createAiProvider(providerName as AiProviderName, apiKey)
-    this.providers.set(providerName, provider)
-    return provider
   }
 }

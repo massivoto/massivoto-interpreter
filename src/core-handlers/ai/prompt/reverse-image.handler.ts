@@ -12,12 +12,11 @@
  */
 import type { AiProvider, AiProviderName } from '@massivoto/kit'
 import { DEFAULT_AI_PROVIDER } from '@massivoto/kit'
-import { resolveProvider } from '@massivoto/auth-domain'
 import { resolveModel } from '../defaults.js'
-import { createAiProvider } from '../providers/create-ai-provider.js'
 import { ActionResult, ExecutionContext } from '@massivoto/kit'
 import { BaseCommandHandler } from '../../../handlers/index.js'
 import { toImageData } from '../../../utils/file-utils.js'
+import { AiProviderRegistry } from '../providers/ai-provider-registry.js'
 
 // R-AIC-42: ReverseImageHandler accepts gemini (openai/anthropic future)
 const REVERSE_ACCEPTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']
@@ -26,15 +25,16 @@ export class ReverseImageHandler extends BaseCommandHandler<string> {
   readonly type = 'command' as const
   override readonly acceptedProviders = REVERSE_ACCEPTED_PROVIDERS
 
-  private providers: Map<string, AiProvider> = new Map()
+  private registry: AiProviderRegistry
 
-  constructor() {
+  constructor(registry?: AiProviderRegistry) {
     super('@ai/prompt/reverseImage')
+    this.registry = registry ?? new AiProviderRegistry()
   }
 
-  // R-AIC-63: test hook remains
+  // R-PC-08: backward-compatible test hook delegates to registry
   setProvider(name: string, provider: AiProvider): void {
-    this.providers.set(name, provider)
+    this.registry.set(name, provider)
   }
 
   // R-RIMG-92: Static dummy prompt for testing and CI
@@ -82,8 +82,8 @@ export class ReverseImageHandler extends BaseCommandHandler<string> {
     }
 
     try {
-      // R-AIC-43: Use centralized resolution
-      const provider = this.getOrCreateProvider(providerName as AiProviderName, context)
+      // R-PC-06: Use centralized registry instead of duplicated provider logic
+      const provider = this.registry.get(providerName, this.acceptedProviders!, context)
 
       // R-RIMG-61 to R-RIMG-63: Model tier resolution (shared from ai/defaults.ts)
       const resolvedModel = resolveModel(modelArg, providerName)
@@ -125,51 +125,5 @@ export class ReverseImageHandler extends BaseCommandHandler<string> {
     }
 
     return prompt
-  }
-
-  private getOrCreateProvider(
-    providerName: AiProviderName,
-    context: ExecutionContext,
-  ): AiProvider {
-    const cached = this.providers.get(providerName)
-    if (cached) return cached
-
-    if (context.aiConfig) {
-      const resolved = resolveProvider(context.aiConfig, this.acceptedProviders!)
-      const provider = createAiProvider(resolved.name, resolved.apiKey)
-      this.providers.set(resolved.name, provider)
-      return provider
-    }
-
-    return this.fallbackCreateProvider(providerName, context)
-  }
-
-  private fallbackCreateProvider(
-    providerName: AiProviderName,
-    context: ExecutionContext,
-  ): AiProvider {
-    const validProviders: AiProviderName[] = ['gemini', 'openai', 'anthropic']
-    if (!validProviders.includes(providerName)) {
-      throw new Error(
-        `Unknown provider "${providerName}". Valid options: ${validProviders.join(', ')}`,
-      )
-    }
-
-    const keyMap: Record<string, string> = {
-      gemini: 'GEMINI_API_KEY',
-      openai: 'OPENAI_API_KEY',
-      anthropic: 'ANTHROPIC_API_KEY',
-    }
-    const keyName = keyMap[providerName]
-    const apiKey = context.env?.[keyName] || process.env[keyName]
-    if (!apiKey) {
-      throw new Error(
-        `Missing ${keyName} environment variable. Copy env.dist to .env and add your API key.`,
-      )
-    }
-
-    const provider = createAiProvider(providerName, apiKey)
-    this.providers.set(providerName, provider)
-    return provider
   }
 }
