@@ -11,7 +11,7 @@
  */
 import type { AiProvider, AiProviderConfig, AiProviderName } from '@massivoto/kit'
 import { AI_PROVIDER_KEY_NAMES } from '@massivoto/kit'
-import { resolveProvider } from '@massivoto/auth-domain'
+import { resolveProvider } from '@massivoto/kit'
 import { createAiProvider } from './create-ai-provider.js'
 
 const VALID_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']

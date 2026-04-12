@@ -27,7 +27,6 @@
   },
   "dependencies": {
     "@masala/parser": "^2.0.0",
-    "@massivoto/auth-domain": "file:../massivoto-platform/packages/auth-domain",
     "@massivoto/kit": "file:../massivoto-platform/packages/kit",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "cheerio": "^1.2.0",
@@ -38,6 +37,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@massivoto/auth-domain": "file:../massivoto-platform/packages/auth-domain",
     "@types/lodash.set": "^4.3.9",
     "@types/node": "^22.10.5",
     "@types/turndown": "^5.0.6",
