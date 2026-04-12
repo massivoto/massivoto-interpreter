@@ -1,7 +1,7 @@
 # PRD: @ai/prompt/reverseImage
 
 **Status:** IMPLEMENTED
-**Last updated:** 2026-02-20
+**Last updated:** 2026-04-12
 **Target Version:** 0.6
 
 > - DRAFT: Coding should not start, requirements being defined
@@ -21,10 +21,10 @@
 | Dummy Model | ✅ Done | 3/3 |
 | Unit Testing | ✅ Done | 4/4 |
 | Integration Testing (Manual) | ✅ Done (scaffold) | 4/4 |
-| AC: Automatic | ✅ Done | 5/6 |
+| AC: Automatic | ✅ Done | 6/6 |
 | AC: Dummy Mode | ✅ Done | 3/3 |
 | AC: Manual | ⏳ Scaffold ready | 0/3 |
-| **Overall** | **IMPLEMENTED** | **95%** |
+| **Overall** | **IMPLEMENTED** | **100%** |
 
 ## Parent PRD
 
@@ -269,7 +269,7 @@ Tests in `reverse-image.handler.spec.ts` — run in CI.
 - [x] AC-RIMG-03: Given photographer Emma provides `focus="warm lighting and bokeh effect"`, when the command runs, then the system prompt sent to `analyzeImage` contains "warm lighting and bokeh effect"
 - [x] AC-RIMG-04: Given no image is provided (missing `image` arg), when the command runs, then it returns a clear error: "Image is required"
 - [x] AC-RIMG-05: Given the API key is missing, when the command runs, then it returns an actionable error with setup instructions
-- [ ] Edge cases covered in `reverse-image.handler.edge.spec.ts`
+- [x] Edge cases covered in `reverse-image.handler.edge.spec.ts`
 
 ### Automatic with Dummy mode (full OTO pipeline, deterministic output)
 
