@@ -6,6 +6,8 @@ import { createEmptyExecutionContext } from '@massivoto/kit'
 /**
  * Theme: Photography Studio -- photographer Emma generates images from prompts
  * with scene variations for a racing photo series.
+ *
+ * R-PAR-13: Tests inject mocks via context.resolvedProvider
  */
 
 function createMockProvider(result: ImageResult): AiProvider {
@@ -29,6 +31,11 @@ describe('GenerateImageHandler', () => {
     it('should have type command', () => {
       const handler = new GenerateImageHandler()
       expect(handler.type).toBe('command')
+    })
+
+    it('should have capability set to image', () => {
+      const handler = new GenerateImageHandler()
+      expect(handler.capability).toBe('image')
     })
   })
 
@@ -59,9 +66,8 @@ describe('GenerateImageHandler', () => {
     it('should return base64 from provider as ActionResult.value', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run(
         { prompt: 'A racing car in golden light' },
@@ -75,9 +81,8 @@ describe('GenerateImageHandler', () => {
     it('should pass prompt to provider.generateImage', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ prompt: 'A racing car in golden light' }, context)
 
@@ -91,9 +96,8 @@ describe('GenerateImageHandler', () => {
     it('should use square as default size', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ prompt: 'A portrait' }, context)
 
@@ -105,9 +109,8 @@ describe('GenerateImageHandler', () => {
     it('should allow custom size', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ prompt: 'A banner', size: 'landscape' }, context)
 
@@ -119,9 +122,8 @@ describe('GenerateImageHandler', () => {
     it('should pass style when provided', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ prompt: 'A logo', style: 'illustration' }, context)
 
@@ -136,9 +138,8 @@ describe('GenerateImageHandler', () => {
     it('should replace {{variation}} in prompt when variation arg provided', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run(
         {
@@ -159,9 +160,8 @@ describe('GenerateImageHandler', () => {
     it('should replace all occurrences of {{variation}}', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run(
         {
@@ -184,9 +184,8 @@ describe('GenerateImageHandler', () => {
     it('should send prompt unchanged when variation provided but no placeholder exists', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run(
         {
@@ -207,9 +206,8 @@ describe('GenerateImageHandler', () => {
     it('should send {{variation}} as literal text when no variation arg provided', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run(
         { prompt: 'A car {{variation}} with lighting' },
@@ -227,9 +225,8 @@ describe('GenerateImageHandler', () => {
     it('should resolve "best" to gemini-2.5-flash', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run(
         { prompt: 'A portrait', model: 'best' },
@@ -242,9 +239,8 @@ describe('GenerateImageHandler', () => {
     it('should resolve "light" to gemini-2.5-flash-lite', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run(
         { prompt: 'A portrait', model: 'light' },
@@ -257,9 +253,8 @@ describe('GenerateImageHandler', () => {
     it('should pass raw model ID through unchanged', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run(
         { prompt: 'A portrait', model: 'gemini-2.5-flash-lite' },
@@ -275,9 +270,8 @@ describe('GenerateImageHandler', () => {
     it('should default to "best" when no model arg is provided', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ base64: FAKE_BASE64_IMAGE, costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run({ prompt: 'A portrait' }, context)
 
@@ -285,42 +279,17 @@ describe('GenerateImageHandler', () => {
     })
   })
 
-  // R-GEN-25: API key validation
-  describe('R-GEN-25: API key from environment', () => {
-    it('should fail when GEMINI_API_KEY is missing', async () => {
-      const handler = new GenerateImageHandler()
-      const context = createEmptyExecutionContext('emma-123')
-      context.env = {}
-
-      const result = await handler.run({ prompt: 'A car' }, context)
-
-      expect(result.success).toBe(false)
-      expect(result.fatalError).toContain('GEMINI_API_KEY')
-    })
-
-    it('should fail with actionable error message', async () => {
-      const handler = new GenerateImageHandler()
-      const context = createEmptyExecutionContext('emma-123')
-      context.env = {}
-
-      const result = await handler.run({ prompt: 'A car' }, context)
-
-      expect(result.fatalError).toContain('env.dist')
-    })
-  })
-
   describe('R-GEN-104: provider error handling', () => {
     it('should handle provider errors gracefully', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider: AiProvider = {
         name: 'mock',
         generateText: vi.fn().mockResolvedValue({ text: '', tokensUsed: 0 }),
         generateImage: vi.fn().mockRejectedValue(new Error('Content policy violation')),
         analyzeImage: vi.fn().mockResolvedValue({ text: '' }),
       }
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run({ prompt: 'Generate something' }, context)
 
@@ -348,17 +317,17 @@ describe('GenerateImageHandler', () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
       const mockProvider = createMockProvider({ base64: 'should not be called', costUnits: 1 })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ prompt: 'anything', model: 'dummy' }, context)
 
       expect(mockProvider.generateImage).not.toHaveBeenCalled()
     })
 
-    it('should not require API key when model is "dummy"', async () => {
+    it('should not require resolvedProvider when model is "dummy"', async () => {
       const handler = new GenerateImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = {}
+      // No resolvedProvider set
 
       const result = await handler.run(
         { prompt: 'anything', model: 'dummy' },

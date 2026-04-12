@@ -7,6 +7,8 @@ import type { OtoFile } from '../../../utils/file-utils.js'
 /**
  * Theme: Photography Studio -- photographer Carlos and Emma analyze reference photos
  * to reproduce their style using reverse-prompting.
+ *
+ * R-PAR-13: Tests inject mocks via context.resolvedProvider
  */
 
 function createMockProvider(result: ImageAnalysisResult): AiProvider {
@@ -30,6 +32,11 @@ describe('ReverseImageHandler', () => {
     it('should have type command', () => {
       const handler = new ReverseImageHandler()
       expect(handler.type).toBe('command')
+    })
+
+    it('should have capability set to image-analysis', () => {
+      const handler = new ReverseImageHandler()
+      expect(handler.capability).toBe('image-analysis')
     })
   })
 
@@ -59,11 +66,10 @@ describe('ReverseImageHandler', () => {
     it('should send the image to analyzeImage', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'A detailed prompt with {{variation}} in a racing scene',
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ image: FAKE_BASE64_IMAGE }, context)
 
@@ -75,11 +81,10 @@ describe('ReverseImageHandler', () => {
     it('should include reverse-prompting instructions in the system prompt', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'A prompt with {{variation}}',
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ image: FAKE_BASE64_IMAGE }, context)
 
@@ -90,11 +95,10 @@ describe('ReverseImageHandler', () => {
     it('should mention style, composition, colors, lighting in system prompt', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'A prompt with {{variation}}',
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ image: FAKE_BASE64_IMAGE }, context)
 
@@ -111,10 +115,9 @@ describe('ReverseImageHandler', () => {
     it('should return the AI response as ActionResult.value', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const expectedPrompt = 'A cinematic photograph of {{variation}} with warm golden lighting'
       const mockProvider = createMockProvider({ text: expectedPrompt })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run({ image: FAKE_BASE64_IMAGE }, context)
 
@@ -128,11 +131,10 @@ describe('ReverseImageHandler', () => {
     it('should inject focus into the system prompt sent to analyzeImage', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'A prompt emphasizing warm lighting and bokeh with {{variation}}',
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run(
         { image: FAKE_BASE64_IMAGE, focus: 'warm lighting and bokeh effect' },
@@ -146,11 +148,10 @@ describe('ReverseImageHandler', () => {
     it('should not include focus section when focus is not provided', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'A prompt with {{variation}}',
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ image: FAKE_BASE64_IMAGE }, context)
 
@@ -161,12 +162,21 @@ describe('ReverseImageHandler', () => {
 
   // AC-RIMG-01, AC-RIMG-02
   describe('R-RIMG-103: model tier resolution', () => {
+    // Model tier resolution is provider-specific; use name='gemini' to test alias mapping
+    function createGeminiMockProvider(result: ImageAnalysisResult): AiProvider {
+      return {
+        name: 'gemini',
+        generateText: vi.fn().mockResolvedValue({ text: '', tokensUsed: 0 }),
+        generateImage: vi.fn().mockResolvedValue({ base64: '', costUnits: 0 }),
+        analyzeImage: vi.fn().mockResolvedValue(result),
+      }
+    }
+
     it('should resolve "best" to gemini-2.5-flash', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
-      const mockProvider = createMockProvider({ text: 'prompt with {{variation}}' })
-      handler.setProvider('gemini', mockProvider)
+      const mockProvider = createGeminiMockProvider({ text: 'prompt with {{variation}}' })
+      context.resolvedProvider = mockProvider
 
       await handler.run({ image: FAKE_BASE64_IMAGE, model: 'best' }, context)
 
@@ -177,9 +187,8 @@ describe('ReverseImageHandler', () => {
     it('should resolve "light" to gemini-2.5-flash', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
-      const mockProvider = createMockProvider({ text: 'prompt with {{variation}}' })
-      handler.setProvider('gemini', mockProvider)
+      const mockProvider = createGeminiMockProvider({ text: 'prompt with {{variation}}' })
+      context.resolvedProvider = mockProvider
 
       await handler.run({ image: FAKE_BASE64_IMAGE, model: 'light' }, context)
 
@@ -190,9 +199,8 @@ describe('ReverseImageHandler', () => {
     it('should pass raw model ID through unchanged', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
-      const mockProvider = createMockProvider({ text: 'prompt with {{variation}}' })
-      handler.setProvider('gemini', mockProvider)
+      const mockProvider = createGeminiMockProvider({ text: 'prompt with {{variation}}' })
+      context.resolvedProvider = mockProvider
 
       await handler.run(
         { image: FAKE_BASE64_IMAGE, model: 'gemini-2.5-flash' },
@@ -206,9 +214,8 @@ describe('ReverseImageHandler', () => {
     it('should default to "best" when no model arg is provided', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
-      const mockProvider = createMockProvider({ text: 'prompt with {{variation}}' })
-      handler.setProvider('gemini', mockProvider)
+      const mockProvider = createGeminiMockProvider({ text: 'prompt with {{variation}}' })
+      context.resolvedProvider = mockProvider
 
       await handler.run({ image: FAKE_BASE64_IMAGE }, context)
 
@@ -218,38 +225,16 @@ describe('ReverseImageHandler', () => {
   })
 
   describe('R-RIMG-104: error cases', () => {
-    it('should fail when API key is missing', async () => {
-      const handler = new ReverseImageHandler()
-      const context = createEmptyExecutionContext('carlos-123')
-      context.env = {}
-
-      const result = await handler.run({ image: FAKE_BASE64_IMAGE }, context)
-
-      expect(result.success).toBe(false)
-      expect(result.fatalError).toContain('GEMINI_API_KEY')
-    })
-
-    it('should fail with actionable error message for missing key', async () => {
-      const handler = new ReverseImageHandler()
-      const context = createEmptyExecutionContext('carlos-123')
-      context.env = {}
-
-      const result = await handler.run({ image: FAKE_BASE64_IMAGE }, context)
-
-      expect(result.fatalError).toContain('env.dist')
-    })
-
     it('should handle provider errors gracefully', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider: AiProvider = {
         name: 'mock',
         generateText: vi.fn().mockResolvedValue({ text: '', tokensUsed: 0 }),
         generateImage: vi.fn().mockResolvedValue({ base64: '', costUnits: 0 }),
         analyzeImage: vi.fn().mockRejectedValue(new Error('Vision API rate limit')),
       }
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run({ image: FAKE_BASE64_IMAGE }, context)
 
@@ -262,11 +247,10 @@ describe('ReverseImageHandler', () => {
     it('should accept an OtoFile and extract base64 and mimeType', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'A prompt with {{variation}}',
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const otoFile: OtoFile = {
         path: '~/photos/emma-portrait.jpg',
@@ -285,11 +269,10 @@ describe('ReverseImageHandler', () => {
     it('should accept a raw base64 string and default to image/png', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'A prompt with {{variation}}',
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ image: FAKE_BASE64_IMAGE }, context)
 
@@ -301,7 +284,6 @@ describe('ReverseImageHandler', () => {
     it('should fail with clear error for invalid image type', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('carlos-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
 
       const result = await handler.run({ image: 42 }, context)
 
@@ -328,7 +310,7 @@ describe('ReverseImageHandler', () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('emma-123')
       const mockProvider = createMockProvider({ text: 'should not be called' })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run(
         { image: FAKE_BASE64_IMAGE, model: 'dummy' },
@@ -338,10 +320,9 @@ describe('ReverseImageHandler', () => {
       expect(mockProvider.analyzeImage).not.toHaveBeenCalled()
     })
 
-    it('should not require API key when model is "dummy"', async () => {
+    it('should not require resolvedProvider when model is "dummy"', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = {}
 
       const result = await handler.run(
         { image: FAKE_BASE64_IMAGE, model: 'dummy' },

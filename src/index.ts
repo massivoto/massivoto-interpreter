@@ -58,6 +58,7 @@ export { createStandardCommandRegistry } from './command-registry/standard-regis
 // Handlers
 export * from './core-handlers/index.js'
 export { BaseCommandHandler } from './handlers/base-command-handler.js'
+export { AiCommandHandler } from './handlers/ai-command-handler.js'
 export {
   registerStandardCommandHandlers,
   getCommandHandlerRegistry,

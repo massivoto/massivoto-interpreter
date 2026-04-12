@@ -3,40 +3,26 @@
  *
  * Analyzes an image and produces a detailed text prompt optimized for
  * image regeneration, with a {{variation}} placeholder for scene/subject swaps.
+ * Provider is resolved and injected by the interpreter via context.resolvedProvider.
  *
- * R-RIMG-41: Handler extending BaseCommandHandler<string> with id @ai/prompt/reverseImage
+ * R-RIMG-41: Handler extending AiCommandHandler<string> with id @ai/prompt/reverseImage
  * R-RIMG-42: Required args: image (base64), output
  * R-RIMG-43: Optional args: focus, model, provider
  * R-RIMG-44: System prompt for reverse-prompting with {{variation}}
  * R-RIMG-45: Returns generated prompt as ActionResult.value
+ * R-PAR-11: Extends AiCommandHandler, uses context.resolvedProvider
  */
-import type { AiProvider, AiProviderName } from '@massivoto/kit'
-import { DEFAULT_AI_PROVIDER } from '@massivoto/kit'
 import { resolveModel } from '../defaults.js'
 import { ActionResult, ExecutionContext } from '@massivoto/kit'
-import { BaseCommandHandler } from '../../../handlers/index.js'
+import { AiCommandHandler } from '../../../handlers/index.js'
 import { toImageData } from '../../../utils/file-utils.js'
-import { AiProviderRegistry } from '../providers/ai-provider-registry.js'
 
-// R-AIC-42: ReverseImageHandler accepts gemini (openai/anthropic future)
-const REVERSE_ACCEPTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']
-
-export class ReverseImageHandler extends BaseCommandHandler<string> {
+export class ReverseImageHandler extends AiCommandHandler<string> {
   readonly type = 'command' as const
-  override readonly acceptedProviders = REVERSE_ACCEPTED_PROVIDERS
-  // R-HC-33: Capability tag for config-based routing
-  override readonly capability = 'image-analysis' as const
+  readonly capability = 'image-analysis' as const
 
-  private registry: AiProviderRegistry
-
-  constructor(registry?: AiProviderRegistry) {
+  constructor() {
     super('@ai/prompt/reverseImage')
-    this.registry = registry ?? new AiProviderRegistry()
-  }
-
-  // R-PC-08: backward-compatible test hook delegates to registry
-  setProvider(name: string, provider: AiProvider): void {
-    this.registry.set(name, provider)
   }
 
   // R-RIMG-92: Static dummy prompt for testing and CI
@@ -83,9 +69,9 @@ export class ReverseImageHandler extends BaseCommandHandler<string> {
     }
 
     try {
-      // R-PC-06: Use centralized registry instead of duplicated provider logic
-      const providerName = (args.provider ?? DEFAULT_AI_PROVIDER) as AiProviderName
-      const provider = this.registry.get(providerName, this.acceptedProviders!, context)
+      // R-PAR-11: Provider is already resolved and injected by interpreter
+      const provider = context.resolvedProvider!
+      const providerName = provider.name ?? 'gemini'
 
       // R-RIMG-61 to R-RIMG-63: Model tier resolution (shared from ai/defaults.ts)
       const resolvedModel = resolveModel(modelArg, providerName)

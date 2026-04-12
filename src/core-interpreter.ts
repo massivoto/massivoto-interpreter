@@ -23,6 +23,8 @@ import type { ScopeChain } from '@massivoto/kit'
 import type { GotoResult } from './core-handlers/flow/goto.handler.js'
 import type { ExitResult } from './core-handlers/flow/exit.handler.js'
 import type { ReturnResult } from './core-handlers/flow/return.handler.js'
+import { AiCommandHandler } from './handlers/ai-command-handler.js'
+import { AiProviderRegistry } from './core-handlers/ai/providers/ai-provider-registry.js'
 import {
   BlockNode,
   ExpressionNode,
@@ -167,10 +169,15 @@ function resolveCondition(
 }
 
 export class CoreInterpreter implements Interpreter {
+  private aiProviderRegistry: AiProviderRegistry
+
   constructor(
     private registry: CommandRegistry,
     private evaluator = new ExpressionEvaluator(),
-  ) {}
+    aiProviderRegistry?: AiProviderRegistry,
+  ) {
+    this.aiProviderRegistry = aiProviderRegistry ?? new AiProviderRegistry()
+  }
 
   /**
    * R-BLK-02: Build enhanced label index that maps labels to their AST locations.
@@ -227,7 +234,14 @@ export class CoreInterpreter implements Interpreter {
       args[arg.name.value] = await this.evaluator.evaluate(arg.value, context)
     }
 
-    const result = await handler.run(args, context)
+    // R-PAR-08: Resolve and inject AI provider before handler.run()
+    let handlerContext = context
+    if (handler instanceof AiCommandHandler) {
+      const provider = this.aiProviderRegistry.get(args.provider, context)
+      handlerContext = { ...context, resolvedProvider: provider }
+    }
+
+    const result = await handler.run(args, handlerContext)
 
     const outcome: InstructionOutcome = {
       success: result.success,

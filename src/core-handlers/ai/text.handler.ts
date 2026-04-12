@@ -1,38 +1,25 @@
 /**
  * TextHandler - @ai/text
  *
- * Generates text using an AI provider (Gemini by default).
+ * Generates text using an AI provider. Provider is resolved and injected
+ * by the interpreter via context.resolvedProvider.
  *
  * R-AI-10: Implement text.handler.ts accepting required args: prompt, output
  * R-AI-11: Support optional args: provider, model, temperature, maxTokens, system
  * R-AI-12: Resolve {expressions} in prompt (done by interpreter before handler)
  * R-AI-13: Store generated text in output variable via ExecutionContext
  * R-AI-14: Return cost metadata (tokens used) in instruction result
+ * R-PAR-09: Extends AiCommandHandler, uses context.resolvedProvider
  */
-import type { AiProvider, AiProviderName } from '@massivoto/kit'
 import type { ActionResult, ExecutionContext } from '@massivoto/kit'
-import { BaseCommandHandler } from '../../handlers/index.js'
-import { AiProviderRegistry } from './providers/ai-provider-registry.js'
+import { AiCommandHandler } from '../../handlers/index.js'
 
-// R-AIC-42: TextHandler accepts gemini (openai/anthropic future)
-const TEXT_ACCEPTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']
-
-export class TextHandler extends BaseCommandHandler<string> {
+export class TextHandler extends AiCommandHandler<string> {
   readonly type = 'command' as const
-  override readonly acceptedProviders = TEXT_ACCEPTED_PROVIDERS
-  // R-HC-31: Capability tag for config-based routing
-  override readonly capability = 'text' as const
+  readonly capability = 'text' as const
 
-  private registry: AiProviderRegistry
-
-  constructor(registry?: AiProviderRegistry) {
+  constructor() {
     super('@ai/text')
-    this.registry = registry ?? new AiProviderRegistry()
-  }
-
-  // R-PC-08: backward-compatible test hook delegates to registry
-  setProvider(name: string, provider: AiProvider): void {
-    this.registry.set(name, provider)
   }
 
   async run(
@@ -51,8 +38,8 @@ export class TextHandler extends BaseCommandHandler<string> {
     const system: string | undefined = args.system
 
     try {
-      // R-PC-04: Use centralized registry instead of duplicated provider logic
-      const provider = this.registry.get(args.provider, this.acceptedProviders!, context)
+      // R-PAR-09: Provider is already resolved and injected by interpreter
+      const provider = context.resolvedProvider!
       const model = args.model
 
       // R-AI-12: Prompt expression resolution is done by interpreter before handler

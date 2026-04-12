@@ -8,6 +8,7 @@ import { createEmptyExecutionContext } from '@massivoto/kit'
  * Theme: Social Media Automation (Emma, Carlos, taglines, summaries)
  *
  * Tests for @ai/text handler (R-AI-10 to R-AI-14)
+ * R-PAR-13: Tests inject mocks via context.resolvedProvider
  */
 
 function createMockProvider(result: TextResult): AiProvider {
@@ -31,6 +32,12 @@ describe('TextHandler', () => {
       const handler = new TextHandler()
 
       expect(handler.type).toBe('command')
+    })
+
+    it('should have capability set to text', () => {
+      const handler = new TextHandler()
+
+      expect(handler.capability).toBe('text')
     })
 
     it('should have init() method', async () => {
@@ -77,15 +84,14 @@ describe('TextHandler', () => {
   })
 
   describe('R-AI-11: optional arguments with defaults', () => {
-    it('should use gemini as default provider', async () => {
+    it('should call provider from context.resolvedProvider', async () => {
       const handler = new TextHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'Massivoto: Automate Everything',
         tokensUsed: 10,
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ prompt: 'Write a tagline for Massivoto' }, context)
 
@@ -95,12 +101,11 @@ describe('TextHandler', () => {
     it('should use default temperature of 0.7', async () => {
       const handler = new TextHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'Generated text',
         tokensUsed: 5,
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ prompt: 'Write something' }, context)
 
@@ -112,12 +117,11 @@ describe('TextHandler', () => {
     it('should allow custom temperature', async () => {
       const handler = new TextHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'Generated text',
         tokensUsed: 5,
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run(
         { prompt: 'Write something', temperature: 0.2 },
@@ -132,12 +136,11 @@ describe('TextHandler', () => {
     it('should pass maxTokens when provided', async () => {
       const handler = new TextHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'Generated text',
         tokensUsed: 5,
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ prompt: 'Write something', maxTokens: 100 }, context)
 
@@ -149,12 +152,11 @@ describe('TextHandler', () => {
     it('should pass system prompt when provided', async () => {
       const handler = new TextHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'Generated text',
         tokensUsed: 5,
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run(
         { prompt: 'Write something', system: 'You are a marketing expert' },
@@ -169,12 +171,11 @@ describe('TextHandler', () => {
     it('should pass model when provided', async () => {
       const handler = new TextHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'Generated text',
         tokensUsed: 5,
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run(
         { prompt: 'Write something', model: 'gemini-pro' },
@@ -191,12 +192,11 @@ describe('TextHandler', () => {
     it('should pass the prompt string directly to provider', async () => {
       const handler = new TextHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'Massivoto: Scale Your Workflow',
         tokensUsed: 8,
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       // Note: Expression resolution happens in the interpreter before the handler is called
       // The handler receives the already-resolved prompt
@@ -212,12 +212,11 @@ describe('TextHandler', () => {
     it('should return generated text as value', async () => {
       const handler = new TextHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'Emma loves automation',
         tokensUsed: 5,
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run({ prompt: 'Write about Emma' }, context)
 
@@ -230,12 +229,11 @@ describe('TextHandler', () => {
     it('should return cost based on tokens used', async () => {
       const handler = new TextHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'Generated text',
         tokensUsed: 100,
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run({ prompt: 'Write something' }, context)
 
@@ -245,12 +243,11 @@ describe('TextHandler', () => {
     it('should include tokens in message', async () => {
       const handler = new TextHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({
         text: 'Generated text',
         tokensUsed: 42,
       })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run({ prompt: 'Write something' }, context)
 
@@ -258,51 +255,10 @@ describe('TextHandler', () => {
     })
   })
 
-  describe('R-AI-33: API key from environment', () => {
-    it('should fail when GEMINI_API_KEY is missing', async () => {
-      const handler = new TextHandler()
-      const context = createEmptyExecutionContext('emma-123')
-      context.env = {} // No API key
-
-      const result = await handler.run({ prompt: 'Write something' }, context)
-
-      expect(result.success).toBe(false)
-      expect(result.fatalError).toContain('GEMINI_API_KEY')
-    })
-
-    it('should fail with actionable error message for missing key', async () => {
-      const handler = new TextHandler()
-      const context = createEmptyExecutionContext('emma-123')
-      context.env = {}
-
-      const result = await handler.run({ prompt: 'Write something' }, context)
-
-      expect(result.fatalError).toContain('env.dist')
-    })
-  })
-
-  describe('AC-05: unknown provider error', () => {
-    it('should fail with clear error for unknown provider', async () => {
-      const handler = new TextHandler()
-      const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
-
-      const result = await handler.run(
-        { prompt: 'Write something', provider: 'unknown-provider' },
-        context,
-      )
-
-      expect(result.success).toBe(false)
-      expect(result.fatalError).toContain('unknown-provider')
-      expect(result.fatalError).toContain('gemini')
-    })
-  })
-
   describe('R-AI-43: error handling', () => {
     it('should handle provider errors gracefully', async () => {
       const handler = new TextHandler()
       const context = createEmptyExecutionContext('emma-123')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider: AiProvider = {
         name: 'mock',
         generateText: vi
@@ -311,7 +267,7 @@ describe('TextHandler', () => {
         generateImage: vi.fn().mockResolvedValue({ base64: '', costUnits: 0 }),
         analyzeImage: vi.fn().mockResolvedValue({ text: '' }),
       }
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run({ prompt: 'Write something' }, context)
 

@@ -1,45 +1,32 @@
 /**
  * GenerateImageHandler - @ai/image/generate
  *
- * Generates images from text prompts using an AI provider (Gemini/Imagen by default).
+ * Generates images from text prompts using an AI provider.
+ * Provider is resolved and injected by the interpreter via context.resolvedProvider.
  * Supports {{variation}} template substitution for batch generation pipelines.
  *
- * R-GEN-21: Handler extending BaseCommandHandler<string> with id @ai/image/generate
+ * R-GEN-21: Handler extending AiCommandHandler<string> with id @ai/image/generate
  * R-GEN-22: Required args: prompt
  * R-GEN-23: Optional args: variation, model, size, style
  * R-GEN-24: Call provider.generateImage() and return base64 as ActionResult.value
- * R-GEN-25: API key from context.env or process.env
+ * R-PAR-10: Extends AiCommandHandler, uses context.resolvedProvider
  */
-import type { AiProvider, AiProviderName, ImageRequest } from '@massivoto/kit'
+import type { ImageRequest } from '@massivoto/kit'
 import { AI_IMAGE_DEFAULTS, resolveModel } from '../defaults.js'
 import { ActionResult, ExecutionContext } from '@massivoto/kit'
-import { BaseCommandHandler } from '../../../handlers/index.js'
-import { AiProviderRegistry } from '../providers/ai-provider-registry.js'
+import { AiCommandHandler } from '../../../handlers/index.js'
 
 // R-GEN-92: Minimal valid 1x1 transparent PNG (67 bytes)
 const DUMMY_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAB' +
   'Nl7BcQAAAABJRU5ErkJggg=='
 
-// R-AIC-42: GenerateImageHandler accepts gemini (openai/anthropic future)
-const IMAGE_ACCEPTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropic']
-
-export class GenerateImageHandler extends BaseCommandHandler<string> {
+export class GenerateImageHandler extends AiCommandHandler<string> {
   readonly type = 'command' as const
-  override readonly acceptedProviders = IMAGE_ACCEPTED_PROVIDERS
-  // R-HC-32: Capability tag for config-based routing
-  override readonly capability = 'image' as const
+  readonly capability = 'image' as const
 
-  private registry: AiProviderRegistry
-
-  constructor(registry?: AiProviderRegistry) {
+  constructor() {
     super('@ai/image/generate')
-    this.registry = registry ?? new AiProviderRegistry()
-  }
-
-  // R-PC-08: backward-compatible test hook delegates to registry
-  setProvider(name: string, provider: AiProvider): void {
-    this.registry.set(name, provider)
   }
 
   // R-GEN-92: Static dummy image for testing and CI
@@ -68,9 +55,9 @@ export class GenerateImageHandler extends BaseCommandHandler<string> {
     }
 
     try {
-      // R-PC-05: Use centralized registry instead of duplicated provider logic
-      const providerName = (args.provider ?? 'gemini') as AiProviderName
-      const provider = this.registry.get(providerName, this.acceptedProviders!, context)
+      // R-PAR-10: Provider is already resolved and injected by interpreter
+      const provider = context.resolvedProvider!
+      const providerName = provider.name ?? 'gemini'
 
       // R-GEN-61: Resolve model tier alias
       resolveModel(modelArg, providerName)

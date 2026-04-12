@@ -39,7 +39,7 @@ describe.skipIf(shouldSkip)(
       expect(config.providers).toHaveLength(1)
       expect(config.providers[0].name).toBe('gemini')
 
-      const resolved = resolveProvider(config, ['gemini'])
+      const resolved = resolveProvider(config)
       expect(resolved.name).toBe('gemini')
 
       const provider = createAiProvider(resolved.name, resolved.apiKey)

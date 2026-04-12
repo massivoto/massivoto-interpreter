@@ -1,5 +1,6 @@
 // Re-export from new command-registry module
 export { BaseCommandHandler } from './base-command-handler.js'
+export { AiCommandHandler } from './ai-command-handler.js'
 export { CoreHandlersBundle } from '../command-registry/core-handlers-bundle.js'
 export { CommandNotFoundError } from '../command-registry/errors.js'
 

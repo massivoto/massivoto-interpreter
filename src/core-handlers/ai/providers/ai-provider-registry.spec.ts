@@ -3,10 +3,12 @@ import { AiProviderRegistry } from './ai-provider-registry.js'
 import type { AiProvider, AiProviderConfig } from '@massivoto/kit'
 
 /**
- * R-PC-01 to R-PC-03: AiProviderRegistry unit tests.
+ * R-PC-01 to R-PC-03, R-PAR-07: AiProviderRegistry unit tests.
  *
  * Theme: Social Media Automation -- Emma and Carlos share providers
  * across text generation, image generation, and reverse-prompting.
+ *
+ * R-PAR-07: No acceptedProviders parameter -- registry resolves without filtering.
  */
 
 function createMockProvider(name: string = 'mock'): AiProvider {
@@ -20,7 +22,7 @@ function createMockProvider(name: string = 'mock'): AiProvider {
 
 function createConfig(providers: { name: string; apiKey: string }[]): AiProviderConfig {
   return {
-    providers: providers.map((p) => ({ name: p.name as any, apiKey: p.apiKey })),
+    providers: providers.map((p) => ({ name: p.name, apiKey: p.apiKey })),
   }
 }
 
@@ -31,7 +33,7 @@ describe('AiProviderRegistry', () => {
       const mock = createMockProvider()
       registry.set('gemini', mock)
 
-      const result = registry.get('gemini', ['gemini'], { env: {} })
+      const result = registry.get('gemini', { env: {} })
 
       expect(result).toBe(mock)
     })
@@ -42,7 +44,7 @@ describe('AiProviderRegistry', () => {
 
       registry.clear()
 
-      expect(() => registry.get('gemini', ['gemini'], { env: {} })).toThrow('GEMINI_API_KEY')
+      expect(() => registry.get('gemini', { env: {} })).toThrow('GEMINI_API_KEY')
     })
   })
 
@@ -51,7 +53,7 @@ describe('AiProviderRegistry', () => {
       const registry = new AiProviderRegistry()
       const config = createConfig([{ name: 'gemini', apiKey: 'cfg-key' }])
 
-      const provider = registry.get(undefined, ['gemini'], { aiConfig: config })
+      const provider = registry.get(undefined, { aiConfig: config })
 
       expect(provider).toBeDefined()
     })
@@ -59,7 +61,7 @@ describe('AiProviderRegistry', () => {
     it('should fall back to env vars when no aiConfig', () => {
       const registry = new AiProviderRegistry()
 
-      const provider = registry.get('gemini', ['gemini'], {
+      const provider = registry.get('gemini', {
         env: { GEMINI_API_KEY: 'env-key' },
       })
 
@@ -69,29 +71,13 @@ describe('AiProviderRegistry', () => {
     it('should throw for missing env key when no config', () => {
       const registry = new AiProviderRegistry()
 
-      expect(() => registry.get('gemini', ['gemini'], { env: {} })).toThrow('GEMINI_API_KEY')
+      expect(() => registry.get('gemini', { env: {} })).toThrow('GEMINI_API_KEY')
     })
 
     it('should throw actionable error for missing key', () => {
       const registry = new AiProviderRegistry()
 
-      expect(() => registry.get('gemini', ['gemini'], { env: {} })).toThrow('env.dist')
-    })
-
-    it('should throw for unknown provider name', () => {
-      const registry = new AiProviderRegistry()
-
-      expect(() =>
-        registry.get('dalle', ['gemini'], { env: { GEMINI_API_KEY: 'key' } }),
-      ).toThrow('Unknown provider "dalle"')
-    })
-
-    it('should include valid options in unknown provider error', () => {
-      const registry = new AiProviderRegistry()
-
-      expect(() =>
-        registry.get('dalle', ['gemini'], { env: {} }),
-      ).toThrow('gemini')
+      expect(() => registry.get('gemini', { env: {} })).toThrow('env.dist')
     })
   })
 
@@ -101,8 +87,8 @@ describe('AiProviderRegistry', () => {
       const mock = createMockProvider()
       registry.set('gemini', mock)
 
-      const first = registry.get('gemini', ['gemini'], { env: {} })
-      const second = registry.get('gemini', ['gemini'], { env: {} })
+      const first = registry.get('gemini', { env: {} })
+      const second = registry.get('gemini', { env: {} })
 
       expect(first).toBe(second)
     })
@@ -111,8 +97,8 @@ describe('AiProviderRegistry', () => {
       const registry = new AiProviderRegistry()
       const config = createConfig([{ name: 'gemini', apiKey: 'cfg-key' }])
 
-      const first = registry.get(undefined, ['gemini'], { aiConfig: config })
-      const second = registry.get(undefined, ['gemini'], { aiConfig: config })
+      const first = registry.get(undefined, { aiConfig: config })
+      const second = registry.get(undefined, { aiConfig: config })
 
       expect(first).toBe(second)
     })
@@ -121,8 +107,8 @@ describe('AiProviderRegistry', () => {
       const registry = new AiProviderRegistry()
       const env = { GEMINI_API_KEY: 'env-key' }
 
-      const first = registry.get('gemini', ['gemini'], { env })
-      const second = registry.get('gemini', ['gemini'], { env })
+      const first = registry.get('gemini', { env })
+      const second = registry.get('gemini', { env })
 
       expect(first).toBe(second)
     })
@@ -135,7 +121,7 @@ describe('AiProviderRegistry', () => {
       registry.set('gemini', mock)
       const config = createConfig([{ name: 'gemini', apiKey: 'key' }])
 
-      const result = registry.get('gemini', ['gemini', 'openai'], { aiConfig: config })
+      const result = registry.get('gemini', { aiConfig: config })
 
       expect(result).toBe(mock)
     })
@@ -143,7 +129,7 @@ describe('AiProviderRegistry', () => {
     it('should default to gemini when no hint and no config', () => {
       const registry = new AiProviderRegistry()
 
-      const provider = registry.get(undefined, ['gemini'], {
+      const provider = registry.get(undefined, {
         env: { GEMINI_API_KEY: 'key' },
       })
 

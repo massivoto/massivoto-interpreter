@@ -9,7 +9,7 @@
  * - R-GOTO-41: @flow/goto handler
  * - R-GOTO-44: @flow/exit handler
  * - R-GOTO-47: @flow/return handler
- * - R-PC-07: Shared AiProviderRegistry for AI handlers
+ * - R-PAR-12: AI handlers no longer need shared registry -- providers injected via context
  */
 import type { CommandHandler, RegistryBundle } from '@massivoto/kit'
 import type { AiProvider } from '@massivoto/kit'
@@ -19,7 +19,6 @@ import { ExitHandler } from '../core-handlers/flow/exit.handler.js'
 import { ReturnHandler } from '../core-handlers/flow/return.handler.js'
 import { LogHandler } from '../core-handlers/utils/log.handler.js'
 import { SetHandler } from '../core-handlers/utils/set.handler.js'
-import { AiProviderRegistry } from '../core-handlers/ai/providers/ai-provider-registry.js'
 import {
   ConfirmHandler,
   GenerateImageHandler,
@@ -68,9 +67,6 @@ export class CoreHandlersBundle implements RegistryBundle<CommandHandler<any>> {
   async load(): Promise<Map<string, CommandHandler<any>>> {
     const handlers = new Map<string, CommandHandler<any>>()
 
-    // R-PC-07: Shared registry for all AI handlers
-    const aiRegistry = new AiProviderRegistry()
-
     const coreHandlers: CommandHandler<any>[] = [
       new LogHandler(),
       new SetHandler(),
@@ -81,11 +77,11 @@ export class CoreHandlersBundle implements RegistryBundle<CommandHandler<any>> {
       // Human validation handlers (R-CONFIRM-101, R-GRID-81)
       new ConfirmHandler(),
       new GridHandler(),
-      // AI generation handlers (R-AI-03, R-GEN-82) -- shared registry
-      new TextHandler(aiRegistry),
-      new GenerateImageHandler(aiRegistry),
-      // AI prompt engineering handlers (R-RIMG-82) -- shared registry
-      new ReverseImageHandler(aiRegistry),
+      // AI generation handlers -- providers injected via context by interpreter
+      new TextHandler(),
+      new GenerateImageHandler(),
+      // AI prompt engineering handlers
+      new ReverseImageHandler(),
     ]
 
     // R-CRAWL-162: register crawl handlers when adapter is provided

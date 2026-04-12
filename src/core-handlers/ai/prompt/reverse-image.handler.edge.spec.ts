@@ -8,6 +8,8 @@ import { createEmptyExecutionContext } from '@massivoto/kit'
  *
  * Theme: Photography Studio -- boundary conditions and unusual inputs
  * that go beyond the main happy-path and error-path tests.
+ *
+ * R-PAR-13: Tests inject mocks via context.resolvedProvider
  */
 
 function createMockProvider(result: ImageAnalysisResult): AiProvider {
@@ -36,7 +38,6 @@ describe('ReverseImageHandler - edge cases', () => {
     it('should fail for boolean image', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('edge-bool')
-      context.env = { GEMINI_API_KEY: 'test-key' }
 
       const result = await handler.run({ image: true }, context)
 
@@ -47,7 +48,6 @@ describe('ReverseImageHandler - edge cases', () => {
     it('should fail for array image', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('edge-array')
-      context.env = { GEMINI_API_KEY: 'test-key' }
 
       const result = await handler.run({ image: ['data'] }, context)
 
@@ -58,7 +58,6 @@ describe('ReverseImageHandler - edge cases', () => {
     it('should fail for object without base64 property', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('edge-obj')
-      context.env = { GEMINI_API_KEY: 'test-key' }
 
       const result = await handler.run({ image: { path: '/tmp/x.png' } }, context)
 
@@ -67,47 +66,17 @@ describe('ReverseImageHandler - edge cases', () => {
     })
   })
 
-  describe('provider resolution edge cases', () => {
-    it('should fail for unknown provider name', async () => {
-      const handler = new ReverseImageHandler()
-      const context = createEmptyExecutionContext('edge-provider')
-      context.env = { GEMINI_API_KEY: 'test-key' }
-
-      const result = await handler.run(
-        { image: FAKE_BASE64, provider: 'dalle' },
-        context,
-      )
-
-      expect(result.success).toBe(false)
-      expect(result.fatalError).toContain('Unknown provider')
-    })
-
-    it('should reuse cached provider on subsequent calls', async () => {
-      const handler = new ReverseImageHandler()
-      const context = createEmptyExecutionContext('edge-cache')
-      context.env = { GEMINI_API_KEY: 'test-key' }
-      const mockProvider = createMockProvider({ text: 'prompt {{variation}}' })
-      handler.setProvider('gemini', mockProvider)
-
-      await handler.run({ image: FAKE_BASE64 }, context)
-      await handler.run({ image: FAKE_BASE64 }, context)
-
-      expect(mockProvider.analyzeImage).toHaveBeenCalledTimes(2)
-    })
-  })
-
   describe('provider error edge cases', () => {
     it('should handle non-Error thrown by provider', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('edge-throw')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider: AiProvider = {
         name: 'mock',
         generateText: vi.fn(),
         generateImage: vi.fn(),
         analyzeImage: vi.fn().mockRejectedValue('raw string error'),
       }
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run({ image: FAKE_BASE64 }, context)
 
@@ -118,9 +87,8 @@ describe('ReverseImageHandler - edge cases', () => {
     it('should handle provider returning empty text', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('edge-empty')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ text: '' })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const result = await handler.run({ image: FAKE_BASE64 }, context)
 
@@ -134,9 +102,8 @@ describe('ReverseImageHandler - edge cases', () => {
     it('should handle unicode characters in focus', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('edge-unicode')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ text: 'prompt {{variation}}' })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run(
         { image: FAKE_BASE64, focus: 'ambiance nocturne et lumieres de la ville' },
@@ -150,9 +117,8 @@ describe('ReverseImageHandler - edge cases', () => {
     it('should handle very long focus string', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('edge-long')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ text: 'prompt {{variation}}' })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       const longFocus = 'detailed aspect '.repeat(100).trim()
       await handler.run({ image: FAKE_BASE64, focus: longFocus }, context)
@@ -164,9 +130,8 @@ describe('ReverseImageHandler - edge cases', () => {
     it('should not include focus section when focus is empty string', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('edge-empty-focus')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ text: 'prompt {{variation}}' })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ image: FAKE_BASE64, focus: '' }, context)
 
@@ -180,9 +145,8 @@ describe('ReverseImageHandler - edge cases', () => {
     it('should treat empty string model as raw passthrough', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('edge-empty-model')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ text: 'prompt {{variation}}' })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ image: FAKE_BASE64, model: '' }, context)
 
@@ -194,9 +158,8 @@ describe('ReverseImageHandler - edge cases', () => {
     it('should be case-sensitive for model aliases', async () => {
       const handler = new ReverseImageHandler()
       const context = createEmptyExecutionContext('edge-case-model')
-      context.env = { GEMINI_API_KEY: 'test-key' }
       const mockProvider = createMockProvider({ text: 'prompt {{variation}}' })
-      handler.setProvider('gemini', mockProvider)
+      context.resolvedProvider = mockProvider
 
       await handler.run({ image: FAKE_BASE64, model: 'Best' }, context)
 
