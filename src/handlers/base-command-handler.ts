@@ -1,9 +1,12 @@
 import { ActionResult, CommandHandler, ExecutionContext } from '@massivoto/kit'
-import type { AiProviderName } from '@massivoto/kit'
+import type { AiProviderName, AiCapability } from '@massivoto/kit'
 
 export abstract class BaseCommandHandler<T> implements CommandHandler<T> {
   // R-AIC-41: optional accepted providers list for AI handlers
   readonly acceptedProviders?: AiProviderName[]
+
+  // R-HC-30: optional capability tag for config-based provider routing
+  readonly capability?: AiCapability
 
   constructor(public id: string) {}
   type = 'command' as const

@@ -24,6 +24,8 @@ const REVERSE_ACCEPTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthr
 export class ReverseImageHandler extends BaseCommandHandler<string> {
   readonly type = 'command' as const
   override readonly acceptedProviders = REVERSE_ACCEPTED_PROVIDERS
+  // R-HC-33: Capability tag for config-based routing
+  override readonly capability = 'image-analysis' as const
 
   private registry: AiProviderRegistry
 
@@ -72,7 +74,6 @@ export class ReverseImageHandler extends BaseCommandHandler<string> {
     }
 
     const modelArg: string | undefined = args.model
-    const providerName: string = args.provider ?? DEFAULT_AI_PROVIDER
     const focus: string | undefined = args.focus
 
     // R-RIMG-91: Dummy model short-circuits before any API call
@@ -83,6 +84,7 @@ export class ReverseImageHandler extends BaseCommandHandler<string> {
 
     try {
       // R-PC-06: Use centralized registry instead of duplicated provider logic
+      const providerName = (args.provider ?? DEFAULT_AI_PROVIDER) as AiProviderName
       const provider = this.registry.get(providerName, this.acceptedProviders!, context)
 
       // R-RIMG-61 to R-RIMG-63: Model tier resolution (shared from ai/defaults.ts)

@@ -20,6 +20,8 @@ const TEXT_ACCEPTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthropi
 export class TextHandler extends BaseCommandHandler<string> {
   readonly type = 'command' as const
   override readonly acceptedProviders = TEXT_ACCEPTED_PROVIDERS
+  // R-HC-31: Capability tag for config-based routing
+  override readonly capability = 'text' as const
 
   private registry: AiProviderRegistry
 
@@ -47,11 +49,11 @@ export class TextHandler extends BaseCommandHandler<string> {
     const temperature: number = args.temperature ?? 0.7
     const maxTokens: number | undefined = args.maxTokens
     const system: string | undefined = args.system
-    const model: string | undefined = args.model
 
     try {
       // R-PC-04: Use centralized registry instead of duplicated provider logic
       const provider = this.registry.get(args.provider, this.acceptedProviders!, context)
+      const model = args.model
 
       // R-AI-12: Prompt expression resolution is done by interpreter before handler
       const result = await provider.generateText({

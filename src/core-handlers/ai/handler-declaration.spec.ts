@@ -29,6 +29,23 @@ describe('AI handler declarations', () => {
     })
   })
 
+  describe('R-HC-30 to R-HC-33: capability tags on handlers', () => {
+    it('TextHandler should declare capability = text', () => {
+      const handler = new TextHandler()
+      expect(handler.capability).toBe('text')
+    })
+
+    it('GenerateImageHandler should declare capability = image', () => {
+      const handler = new GenerateImageHandler()
+      expect(handler.capability).toBe('image')
+    })
+
+    it('ReverseImageHandler should declare capability = image-analysis', () => {
+      const handler = new ReverseImageHandler()
+      expect(handler.capability).toBe('image-analysis')
+    })
+  })
+
   describe('R-AIC-43: no duplicated credential logic', () => {
     it('TextHandler should not have getApiKey as own method', () => {
       const handler = new TextHandler() as any

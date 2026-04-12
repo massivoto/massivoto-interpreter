@@ -27,6 +27,8 @@ const IMAGE_ACCEPTED_PROVIDERS: AiProviderName[] = ['gemini', 'openai', 'anthrop
 export class GenerateImageHandler extends BaseCommandHandler<string> {
   readonly type = 'command' as const
   override readonly acceptedProviders = IMAGE_ACCEPTED_PROVIDERS
+  // R-HC-32: Capability tag for config-based routing
+  override readonly capability = 'image' as const
 
   private registry: AiProviderRegistry
 
@@ -67,7 +69,7 @@ export class GenerateImageHandler extends BaseCommandHandler<string> {
 
     try {
       // R-PC-05: Use centralized registry instead of duplicated provider logic
-      const providerName = 'gemini' as AiProviderName
+      const providerName = (args.provider ?? 'gemini') as AiProviderName
       const provider = this.registry.get(providerName, this.acceptedProviders!, context)
 
       // R-GEN-61: Resolve model tier alias
