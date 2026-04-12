@@ -1,7 +1,11 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
-import { loadAiConfig, resolveProvider, loadEnvChain } from '@massivoto/auth-domain'
+import { resolveProvider } from '@massivoto/kit'
+// loadAiConfig and loadEnvChain stay in auth-domain (config loading logic).
+// This is why @massivoto/auth-domain is a devDependency: integration tests
+// need the full config loading pipeline, but no production code depends on it.
+import { loadAiConfig, loadEnvChain } from '@massivoto/auth-domain'
 import { IntegrationEnv, skipIfNoRootEnv } from './test-utils/integration-env.js'
 import { createAiProvider } from './providers/create-ai-provider.js'
 
