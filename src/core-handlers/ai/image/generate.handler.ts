@@ -12,7 +12,7 @@
  * R-PAR-10: Extends AiCommandHandler, uses context.resolvedProvider
  */
 import type { ImageRequest } from '@massivoto/kit'
-import { AI_IMAGE_DEFAULTS, resolveModel } from '../defaults.js'
+import { AI_IMAGE_DEFAULTS, resolveImageModel } from '../defaults.js'
 import { ActionResult, ExecutionContext } from '@massivoto/kit'
 import { AiCommandHandler } from '../../../handlers/index.js'
 
@@ -59,8 +59,8 @@ export class GenerateImageHandler extends AiCommandHandler<string> {
       const provider = context.resolvedProvider!
       const providerName = provider.name ?? 'gemini'
 
-      // R-GEN-61: Resolve model tier alias
-      resolveModel(modelArg, providerName)
+      // R-GEN-61: Resolve model tier alias for image generation
+      const resolvedModel = resolveImageModel(modelArg, providerName)
 
       // R-GEN-41 to R-GEN-43: Variation substitution
       let finalPrompt = String(prompt)
@@ -71,6 +71,7 @@ export class GenerateImageHandler extends AiCommandHandler<string> {
       // R-GEN-24: Call provider and return base64
       const result = await provider.generateImage({
         prompt: finalPrompt,
+        model: resolvedModel,
         size,
         style,
       })

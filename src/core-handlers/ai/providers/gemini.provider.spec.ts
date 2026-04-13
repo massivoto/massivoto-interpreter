@@ -262,44 +262,84 @@ describe('GeminiProvider', () => {
     })
   })
 
-  describe('R-AI-32: image generation via Imagen API', () => {
-    it('should call Imagen API for image generation', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
+  describe('R-AI-32: image generation via Gemini generateContent', () => {
+    function mockImageResponse(base64: string) {
+      return vi.fn().mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
-            predictions: [
+            candidates: [
               {
-                bytesBase64Encoded: 'iVBORw0KGgoAAAANSUhEUg==',
+                content: {
+                  parts: [
+                    {
+                      inlineData: {
+                        mimeType: 'image/png',
+                        data: base64,
+                      },
+                    },
+                  ],
+                },
               },
             ],
           }),
       })
+    }
+
+    it('should call Gemini generateContent API for image generation', async () => {
+      const mockFetch = mockImageResponse('iVBORw0KGgoAAAANSUhEUg==')
       global.fetch = mockFetch
 
       const provider = new GeminiProvider('test-key')
       await provider.generateImage({ prompt: 'A fox in a forest' })
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('generativelanguage.googleapis.com'),
+        expect.stringContaining('generateContent'),
         expect.any(Object),
       )
     })
 
-    it('should return base64 image data', async () => {
+    it('should use gemini-2.0-flash-exp as default image model', async () => {
+      const mockFetch = mockImageResponse('iVBORw0KGgoAAAANSUhEUg==')
+      global.fetch = mockFetch
+
+      const provider = new GeminiProvider('test-key')
+      await provider.generateImage({ prompt: 'A fox' })
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('gemini-2.0-flash-exp'),
+        expect.any(Object),
+      )
+    })
+
+    it('should use specified model when provided', async () => {
+      const mockFetch = mockImageResponse('iVBORw0KGgoAAAANSUhEUg==')
+      global.fetch = mockFetch
+
+      const provider = new GeminiProvider('test-key')
+      await provider.generateImage({ prompt: 'A fox', model: 'gemini-2.5-flash' })
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('gemini-2.5-flash'),
+        expect.any(Object),
+      )
+    })
+
+    it('should send responseModalities IMAGE in generationConfig', async () => {
+      const mockFetch = mockImageResponse('iVBORw0KGgoAAAANSUhEUg==')
+      global.fetch = mockFetch
+
+      const provider = new GeminiProvider('test-key')
+      await provider.generateImage({ prompt: 'A fox' })
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body)
+      expect(callBody.generationConfig.responseModalities).toEqual(['IMAGE'])
+    })
+
+    it('should return base64 image data from inlineData', async () => {
       const expectedBase64 =
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            predictions: [
-              {
-                bytesBase64Encoded: expectedBase64,
-              },
-            ],
-          }),
-      })
+      const mockFetch = mockImageResponse(expectedBase64)
       global.fetch = mockFetch
 
       const provider = new GeminiProvider('test-key')
@@ -309,17 +349,7 @@ describe('GeminiProvider', () => {
     })
 
     it('should return cost units (1 per image)', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            predictions: [
-              {
-                bytesBase64Encoded: 'aW1hZ2U=',
-              },
-            ],
-          }),
-      })
+      const mockFetch = mockImageResponse('aW1hZ2U=')
       global.fetch = mockFetch
 
       const provider = new GeminiProvider('test-key')
@@ -328,56 +358,27 @@ describe('GeminiProvider', () => {
       expect(result.costUnits).toBe(1)
     })
 
-    it('should map size to Imagen dimensions', async () => {
+    it('should throw error when response has no image data', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
-            predictions: [{ bytesBase64Encoded: 'aW1hZ2U=' }],
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: 'Sorry, I cannot generate that image.' }],
+                },
+              },
+            ],
           }),
       })
       global.fetch = mockFetch
 
       const provider = new GeminiProvider('test-key')
-      await provider.generateImage({ prompt: 'Banner', size: 'landscape' })
 
-      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body)
-      // Landscape should be wider than tall
-      expect(callBody.parameters.aspectRatio).toBe('16:9')
-    })
-
-    it('should map square size', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            predictions: [{ bytesBase64Encoded: 'aW1hZ2U=' }],
-          }),
-      })
-      global.fetch = mockFetch
-
-      const provider = new GeminiProvider('test-key')
-      await provider.generateImage({ prompt: 'Logo', size: 'square' })
-
-      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body)
-      expect(callBody.parameters.aspectRatio).toBe('1:1')
-    })
-
-    it('should map portrait size', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            predictions: [{ bytesBase64Encoded: 'aW1hZ2U=' }],
-          }),
-      })
-      global.fetch = mockFetch
-
-      const provider = new GeminiProvider('test-key')
-      await provider.generateImage({ prompt: 'Portrait', size: 'portrait' })
-
-      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body)
-      expect(callBody.parameters.aspectRatio).toBe('9:16')
+      await expect(
+        provider.generateImage({ prompt: 'Generate something' }),
+      ).rejects.toThrow('No image data in Gemini response')
     })
 
     it('should throw error on API failure', async () => {

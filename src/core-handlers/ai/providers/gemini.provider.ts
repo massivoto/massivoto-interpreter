@@ -17,7 +17,7 @@ import type {
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta'
 const DEFAULT_TEXT_MODEL = 'gemini-2.5-flash'
-const DEFAULT_IMAGE_MODEL = 'imagen-3.0-generate-002'
+const DEFAULT_IMAGE_MODEL = 'gemini-2.0-flash-exp'
 const DEFAULT_VISION_MODEL = 'gemini-2.5-flash'
 
 export class GeminiProvider implements AiProvider {
@@ -76,22 +76,21 @@ export class GeminiProvider implements AiProvider {
   }
 
   /**
-   * R-AI-32: Generate image using Imagen API.
+   * R-AI-32: Generate image using Gemini generateContent with responseModalities.
+   * Uses gemini-2.0-flash-exp (or request.model) which supports native image generation.
    */
   async generateImage(request: ImageRequest): Promise<ImageResult> {
-    const url = `${GEMINI_API_BASE}/models/${DEFAULT_IMAGE_MODEL}:predict?key=${this.apiKey}`
+    const model = request.model ?? DEFAULT_IMAGE_MODEL
+    const url = `${GEMINI_API_BASE}/models/${model}:generateContent?key=${this.apiKey}`
 
-    const aspectRatio = this.mapSizeToAspectRatio(request.size)
-
-    const body: ImagenRequestBody = {
-      instances: [
+    const body: GeminiImageRequestBody = {
+      contents: [
         {
-          prompt: request.prompt,
+          parts: [{ text: request.prompt }],
         },
       ],
-      parameters: {
-        aspectRatio,
-        sampleCount: 1,
+      generationConfig: {
+        responseModalities: ['IMAGE'],
       },
     }
 
@@ -108,13 +107,20 @@ export class GeminiProvider implements AiProvider {
       throw new Error(errorText)
     }
 
-    const data = (await response.json()) as ImagenResponse
+    const data = (await response.json()) as GeminiImageResponse
 
-    const base64 = data.predictions?.[0]?.bytesBase64Encoded ?? ''
+    // Extract base64 image from inlineData in the response parts
+    const parts = data.candidates?.[0]?.content?.parts ?? []
+    const imagePart = parts.find((p: any) => p.inlineData?.data)
+    const base64 = imagePart?.inlineData?.data ?? ''
+
+    if (!base64) {
+      throw new Error('No image data in Gemini response')
+    }
 
     return {
       base64,
-      costUnits: 1, // Each image generation costs 1 unit
+      costUnits: 1,
     }
   }
 
@@ -194,21 +200,28 @@ interface GeminiTextResponse {
   }
 }
 
-// Imagen API Types
+// Gemini Image Generation Types (via generateContent with responseModalities)
 
-interface ImagenRequestBody {
-  instances: Array<{
-    prompt: string
+interface GeminiImageRequestBody {
+  contents: Array<{
+    parts: Array<{ text: string }>
   }>
-  parameters: {
-    aspectRatio: string
-    sampleCount: number
+  generationConfig: {
+    responseModalities: string[]
   }
 }
 
-interface ImagenResponse {
-  predictions?: Array<{
-    bytesBase64Encoded?: string
+interface GeminiImageResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string
+        inlineData?: {
+          mimeType?: string
+          data?: string
+        }
+      }>
+    }
   }>
 }
 
