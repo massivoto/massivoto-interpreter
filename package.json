@@ -26,14 +26,18 @@
     "prettier": "prettier --write \"src/**/*.ts\" \"./*.json\""
   },
   "dependencies": {
+    "@langchain/anthropic": "^1.3.26",
+    "@langchain/core": "^1.1.39",
+    "@langchain/google-genai": "^2.1.26",
+    "@langchain/openai": "^1.4.4",
     "@masala/parser": "^2.0.0",
     "@massivoto/kit": "file:../massivoto-platform/packages/kit",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "cheerio": "^1.2.0",
+    "dotenv": "^17.3.1",
     "fast-glob": "^3.3.3",
     "lodash.set": "^4.3.2",
     "turndown": "^7.2.2",
-    "dotenv": "^17.3.1",
     "zod": "^3.24.0"
   },
   "devDependencies": {

@@ -18,11 +18,35 @@ export const GEMINI_VISION_MODEL_TIERS: Record<string, string> = {
   light: 'gemini-2.5-flash',
 }
 
+// R-LC-07: OpenAI model tier aliases for text/vision
+export const OPENAI_MODEL_TIERS: Record<string, string> = {
+  best: 'gpt-4o',
+  light: 'gpt-4o-mini',
+}
+
+// R-LC-07: Anthropic model tier aliases for text/vision
+export const ANTHROPIC_MODEL_TIERS: Record<string, string> = {
+  best: 'claude-sonnet-4-20250514',
+  light: 'claude-haiku-4-20250414',
+}
+
+// All provider model tier maps
+const MODEL_TIERS: Record<string, Record<string, string>> = {
+  gemini: GEMINI_VISION_MODEL_TIERS,
+  openai: OPENAI_MODEL_TIERS,
+  anthropic: ANTHROPIC_MODEL_TIERS,
+}
+
+const IMAGE_MODEL_TIERS: Record<string, Record<string, string>> = {
+  gemini: GEMINI_IMAGE_MODEL_TIERS,
+}
+
 // R-GEN-02: Resolve model alias to concrete image generation model ID
 export function resolveImageModel(model: string | undefined, provider: string): string {
   const raw = model ?? AI_IMAGE_DEFAULTS.model
-  if (provider === 'gemini' && raw in GEMINI_IMAGE_MODEL_TIERS) {
-    return GEMINI_IMAGE_MODEL_TIERS[raw]
+  const tiers = IMAGE_MODEL_TIERS[provider]
+  if (tiers && raw in tiers) {
+    return tiers[raw]
   }
   return raw
 }
@@ -30,8 +54,9 @@ export function resolveImageModel(model: string | undefined, provider: string): 
 // Resolve model alias to concrete vision/text model ID
 export function resolveModel(model: string | undefined, provider: string): string {
   const raw = model ?? AI_IMAGE_DEFAULTS.model
-  if (provider === 'gemini' && raw in GEMINI_VISION_MODEL_TIERS) {
-    return GEMINI_VISION_MODEL_TIERS[raw]
+  const tiers = MODEL_TIERS[provider]
+  if (tiers && raw in tiers) {
+    return tiers[raw]
   }
   return raw
 }
