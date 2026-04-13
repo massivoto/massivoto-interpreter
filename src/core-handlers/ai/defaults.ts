@@ -6,10 +6,10 @@ export const AI_IMAGE_DEFAULTS = {
 }
 
 // R-GEN-02: Gemini model tier aliases for image generation
-// Uses gemini-2.0-flash-exp which supports native image generation via generateContent
+// Uses gemini-2.5-flash-image which supports native image generation via generateContent
 export const GEMINI_IMAGE_MODEL_TIERS: Record<string, string> = {
-  best: 'gemini-2.0-flash-exp',
-  light: 'gemini-2.0-flash-exp',
+  best: 'gemini-2.5-flash-image',
+  light: 'gemini-2.5-flash-image',
 }
 
 // Gemini model tier aliases for text/vision (analyzeImage, reverse-image)

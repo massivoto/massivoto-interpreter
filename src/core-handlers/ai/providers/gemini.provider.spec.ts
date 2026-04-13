@@ -299,7 +299,7 @@ describe('GeminiProvider', () => {
       )
     })
 
-    it('should use gemini-2.0-flash-exp as default image model', async () => {
+    it('should use gemini-2.5-flash-image as default image model', async () => {
       const mockFetch = mockImageResponse('iVBORw0KGgoAAAANSUhEUg==')
       global.fetch = mockFetch
 
@@ -307,7 +307,7 @@ describe('GeminiProvider', () => {
       await provider.generateImage({ prompt: 'A fox' })
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('gemini-2.0-flash-exp'),
+        expect.stringContaining('gemini-2.5-flash-image'),
         expect.any(Object),
       )
     })

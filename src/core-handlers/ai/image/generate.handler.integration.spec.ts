@@ -67,7 +67,7 @@ describe('GenerateImageHandler - dummy pipeline integration', () => {
 
     const result = await generator
       .withVar('racePrompt', 'A car {{variation}} with dramatic lighting')
-      .run('@ai/image/generate prompt=racePrompt variation="under the rain" model="dummy" output=testImage')
+      .run('@ai/image/generate prompt={racePrompt} variation="under the rain" model="dummy" output=testImage')
 
     expect(result.exitCode).toBe(0)
     const output = generator.getOutput('testImage')
@@ -96,7 +96,7 @@ describe.skipIf(!process.env.GEMINI_API_KEY)(
       const result = await generator
         .withVar('template', 'A {{variation}} in a racing scene with dramatic lighting')
         .run(
-          '@ai/image/generate prompt=template variation="red car overtaking" output=variationImage',
+          '@ai/image/generate prompt={template} variation="red car overtaking" output=variationImage',
         )
 
       expect(result.exitCode).toBe(0)

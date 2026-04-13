@@ -17,7 +17,7 @@ import type {
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta'
 const DEFAULT_TEXT_MODEL = 'gemini-2.5-flash'
-const DEFAULT_IMAGE_MODEL = 'gemini-2.0-flash-exp'
+const DEFAULT_IMAGE_MODEL = 'gemini-2.5-flash-image'
 const DEFAULT_VISION_MODEL = 'gemini-2.5-flash'
 
 export class GeminiProvider implements AiProvider {

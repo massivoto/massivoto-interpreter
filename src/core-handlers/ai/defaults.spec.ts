@@ -22,12 +22,12 @@ describe('AI_IMAGE_DEFAULTS (R-GEN-01)', () => {
 })
 
 describe('GEMINI_IMAGE_MODEL_TIERS (R-GEN-02)', () => {
-  it('should map best to gemini-2.0-flash-exp', () => {
-    expect(GEMINI_IMAGE_MODEL_TIERS.best).toBe('gemini-2.0-flash-exp')
+  it('should map best to gemini-2.5-flash-image', () => {
+    expect(GEMINI_IMAGE_MODEL_TIERS.best).toBe('gemini-2.5-flash-image')
   })
 
-  it('should map light to gemini-2.0-flash-exp', () => {
-    expect(GEMINI_IMAGE_MODEL_TIERS.light).toBe('gemini-2.0-flash-exp')
+  it('should map light to gemini-2.5-flash-image', () => {
+    expect(GEMINI_IMAGE_MODEL_TIERS.light).toBe('gemini-2.5-flash-image')
   })
 })
 
@@ -42,20 +42,20 @@ describe('GEMINI_VISION_MODEL_TIERS', () => {
 })
 
 describe('resolveImageModel (R-GEN-02)', () => {
-  it('should resolve "best" to gemini-2.0-flash-exp for gemini provider', () => {
-    expect(resolveImageModel('best', 'gemini')).toBe('gemini-2.0-flash-exp')
+  it('should resolve "best" to gemini-2.5-flash-image for gemini provider', () => {
+    expect(resolveImageModel('best', 'gemini')).toBe('gemini-2.5-flash-image')
   })
 
-  it('should resolve "light" to gemini-2.0-flash-exp for gemini provider', () => {
-    expect(resolveImageModel('light', 'gemini')).toBe('gemini-2.0-flash-exp')
+  it('should resolve "light" to gemini-2.5-flash-image for gemini provider', () => {
+    expect(resolveImageModel('light', 'gemini')).toBe('gemini-2.5-flash-image')
   })
 
   it('should pass raw model ID through unchanged for gemini provider', () => {
-    expect(resolveImageModel('gemini-2.0-flash-exp', 'gemini')).toBe('gemini-2.0-flash-exp')
+    expect(resolveImageModel('gemini-2.5-flash-image', 'gemini')).toBe('gemini-2.5-flash-image')
   })
 
-  it('should default to "best" (gemini-2.0-flash-exp) when model is undefined', () => {
-    expect(resolveImageModel(undefined, 'gemini')).toBe('gemini-2.0-flash-exp')
+  it('should default to "best" (gemini-2.5-flash-image) when model is undefined', () => {
+    expect(resolveImageModel(undefined, 'gemini')).toBe('gemini-2.5-flash-image')
   })
 
   it('should pass through alias unchanged for non-gemini provider', () => {
