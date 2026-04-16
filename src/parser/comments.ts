@@ -22,6 +22,8 @@ export function stripComments(source: string): string {
   let i = 0
   // Track position where potential trailing whitespace starts before a line comment
   let whitespaceStartBeforeComment = -1
+  // Track which delimiter opened the current string (" or ')
+  let stringDelimiter = ''
 
   while (i < source.length) {
     const char = source[i]
@@ -29,8 +31,9 @@ export function stripComments(source: string): string {
 
     switch (state) {
       case State.NORMAL:
-        if (char === '"') {
+        if (char === '"' || char === "'") {
           state = State.IN_STRING
+          stringDelimiter = char
           whitespaceStartBeforeComment = -1
           result += char
           i++
@@ -68,8 +71,8 @@ export function stripComments(source: string): string {
           // Escaped character - include both backslash and next char
           result += char + nextChar
           i += 2
-        } else if (char === '"') {
-          // End of string
+        } else if (char === stringDelimiter) {
+          // End of string (matching delimiter)
           state = State.NORMAL
           result += char
           i++

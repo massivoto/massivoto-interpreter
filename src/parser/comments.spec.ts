@@ -88,22 +88,22 @@ line 3 */@api/call endpoint="/users"`
   })
 
   describe('String Awareness (R-CMT-41 to R-CMT-43)', () => {
-    it('R-CMT-41: // inside string literal is NOT a comment', () => {
+    it('R-CMT-41: // inside double-quoted string literal is NOT a comment', () => {
       const input = '@log/print msg="https://example.com"'
       const result = stripComments(input)
       expect(result).toBe('@log/print msg="https://example.com"')
     })
 
-    it('R-CMT-42: /* */ inside string literal is NOT a comment', () => {
+    it('R-CMT-42: /* */ inside double-quoted string literal is NOT a comment', () => {
       const input = '@log/print msg="/* not a comment */"'
       const result = stripComments(input)
       expect(result).toBe('@log/print msg="/* not a comment */"')
     })
 
-    it('R-CMT-43: Escaped quotes inside strings are handled correctly', () => {
-      const input = '@log/print msg="say \\"hello\\" // world"'
+    it('R-CMT-43: Escaped backslash inside strings are handled correctly', () => {
+      const input = '@log/print msg="path\\\\dir // world"'
       const result = stripComments(input)
-      expect(result).toBe('@log/print msg="say \\"hello\\" // world"')
+      expect(result).toBe('@log/print msg="path\\\\dir // world"')
     })
 
     it('should preserve URL with protocol in string', () => {
@@ -129,6 +129,56 @@ line 3 */@api/call endpoint="/users"`
       const input = '@log/print msg="" // empty'
       const result = stripComments(input)
       expect(result).toBe('@log/print msg="" ')
+    })
+  })
+
+  describe('Single-quoted string awareness', () => {
+    it('// inside single-quoted string is NOT a comment', () => {
+      const input = "@log/print msg='https://example.com'"
+      const result = stripComments(input)
+      expect(result).toBe("@log/print msg='https://example.com'")
+    })
+
+    it('/* */ inside single-quoted string is NOT a comment', () => {
+      const input = "@log/print msg='/* not a comment */'"
+      const result = stripComments(input)
+      expect(result).toBe("@log/print msg='/* not a comment */'")
+    })
+
+    it('should preserve // in single-quoted string followed by real comment', () => {
+      const input = "@api/call url='https://api.example.com' // comment"
+      const result = stripComments(input)
+      expect(result).toBe("@api/call url='https://api.example.com' ")
+    })
+
+    it('should handle empty single-quoted string followed by comment', () => {
+      const input = "@log/print msg='' // empty"
+      const result = stripComments(input)
+      expect(result).toBe("@log/print msg='' ")
+    })
+
+    it('should handle double quotes inside single-quoted string', () => {
+      const input = "@log/print msg='He said \"hello\" to them'"
+      const result = stripComments(input)
+      expect(result).toBe("@log/print msg='He said \"hello\" to them'")
+    })
+
+    it('should handle single quotes inside double-quoted string', () => {
+      const input = "@log/print msg=\"the customer's feedback\""
+      const result = stripComments(input)
+      expect(result).toBe("@log/print msg=\"the customer's feedback\"")
+    })
+
+    it('should handle mixed single and double-quoted strings on same line', () => {
+      const input = "@log/print a='hello // world' b=\"foo /* bar */ baz\""
+      const result = stripComments(input)
+      expect(result).toBe("@log/print a='hello // world' b=\"foo /* bar */ baz\"")
+    })
+
+    it('unclosed single-quoted string passes through (not comment stripper concern)', () => {
+      const input = "@log/print msg='unclosed"
+      const result = stripComments(input)
+      expect(result).toBe("@log/print msg='unclosed")
     })
   })
 
@@ -200,8 +250,8 @@ line */ @api/call endpoint="/users"`
       // Should be parseable - just stripped
     })
 
-    it('AC-CMT-08: Escaped quote in string preserves comment-like content', () => {
-      const input = '@log/print msg="a\\"b // c"'
+    it('AC-CMT-08: Single-quoted string preserves comment-like content with double quotes', () => {
+      const input = "@log/print msg='a\"b // c'"
       const result = stripComments(input)
       expect(result).toContain('// c')
     })

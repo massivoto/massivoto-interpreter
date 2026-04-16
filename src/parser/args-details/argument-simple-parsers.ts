@@ -7,9 +7,9 @@ export const plusParser = C.char('+')
 export const minusParser = C.char('-')
 
 export const equal = C.char('=')
-export const quote = C.char('"')
+export const quote = C.charIn("\"'") as SingleParser<'"' | "'">
 
-export const simpleString = F.regex(/[a-zA-Z_0-9-'`$&€£%!@.;?/+*]+/)
+export const simpleString = F.regex(/[a-zA-Z_0-9\-`$&€£%!@.;?/+*]+/)
   .filter((v) => isNaN(Number(v)))
   .filter((value) => !identifier.thenEos().val(value))
 

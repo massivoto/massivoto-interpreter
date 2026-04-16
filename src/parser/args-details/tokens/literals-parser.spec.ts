@@ -114,16 +114,6 @@ describe('Atomic parser', () => {
 describe('String escape sequences', () => {
   const grammar = buildParserForTests()
 
-  it('should parse escaped double quote', () => {
-    const stream = Stream.ofChars('"say \\"hello\\""')
-    const parsing = grammar.parse(stream)
-    expect(parsing.isAccepted()).toBe(true)
-    expect(parsing.value).toEqual({
-      type: 'literal-string',
-      value: 'say "hello"',
-    })
-  })
-
   it('should parse escaped backslash', () => {
     const stream = Stream.ofChars('"C:\\\\Users\\\\name"')
     const parsing = grammar.parse(stream)
@@ -154,13 +144,127 @@ describe('String escape sequences', () => {
     })
   })
 
-  it('should parse mixed escapes', () => {
-    const stream = Stream.ofChars('"line1\\nline2\\t\\"quoted\\""')
+  it('should parse mixed escapes (backslash, newline, tab)', () => {
+    const stream = Stream.ofChars('"line1\\nline2\\tcol"')
     const parsing = grammar.parse(stream)
     expect(parsing.isAccepted()).toBe(true)
     expect(parsing.value).toEqual({
       type: 'literal-string',
-      value: 'line1\nline2\t"quoted"',
+      value: 'line1\nline2\tcol',
     })
+  })
+
+  it('should parse escaped backslash in single-quoted string', () => {
+    const stream = Stream.ofChars("'C:\\\\Users\\\\name'")
+    const parsing = grammar.parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'literal-string',
+      value: 'C:\\Users\\name',
+    })
+  })
+
+  it('should parse escaped newline in single-quoted string', () => {
+    const stream = Stream.ofChars("'line1\\nline2'")
+    const parsing = grammar.parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'literal-string',
+      value: 'line1\nline2',
+    })
+  })
+
+  it('should parse escaped tab in single-quoted string', () => {
+    const stream = Stream.ofChars("'col1\\tcol2'")
+    const parsing = grammar.parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'literal-string',
+      value: 'col1\tcol2',
+    })
+  })
+})
+
+describe('Single-quoted strings', () => {
+  const grammar = buildParserForTests()
+
+  it('should parse a simple single-quoted string', () => {
+    const stream = Stream.ofChars("'hello world'")
+    const parsing = grammar.parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'literal-string',
+      value: 'hello world',
+    })
+  })
+
+  it('should parse empty single-quoted string', () => {
+    const stream = Stream.ofChars("''")
+    const parsing = grammar.parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'literal-string',
+      value: '',
+    })
+  })
+
+  it('should parse double quotes inside single-quoted string', () => {
+    const stream = Stream.ofChars("'He said \"hello\" to them'")
+    const parsing = grammar.parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'literal-string',
+      value: 'He said "hello" to them',
+    })
+  })
+
+  it('should parse single quotes inside double-quoted string', () => {
+    const stream = Stream.ofChars('"the customer\'s feedback"')
+    // Note: The \' here is a JS string escape, not an OTO escape.
+    // In the actual OTO source, this would be: "the customer's feedback"
+    // But Stream.ofChars receives the raw characters.
+    // Let me use a raw approach:
+    const stream2 = Stream.ofChars("\"the customer's feedback\"")
+    const parsing = stream2 ? grammar.parse(stream2) : grammar.parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'literal-string',
+      value: "the customer's feedback",
+    })
+  })
+
+  it('should parse JSON content in single-quoted string', () => {
+    const stream = Stream.ofChars("'{\"name\": \"John\"}'")
+    const parsing = grammar.parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'literal-string',
+      value: '{"name": "John"}',
+    })
+  })
+})
+
+describe('Removed escape: backslash-quote', () => {
+  const grammar = buildParserForTests()
+
+  it('should NOT parse backslash-doublequote as escape -- use single quotes instead', () => {
+    // Old OTO: "say \"hello\"" -- \" was an escape, produced 'say "hello"'
+    // New OTO: \" is no longer a valid escape. Use single quotes instead:
+    const stream = Stream.ofChars("'say \"hello\" to them'")
+    const parsing = grammar.parse(stream)
+    expect(parsing.isAccepted()).toBe(true)
+    expect(parsing.value).toEqual({
+      type: 'literal-string',
+      value: 'say "hello" to them',
+    })
+  })
+
+  it('backslash before double-quote is not an escape sequence', () => {
+    // "say \" -- the \ is literal (not followed by recognized escape char)
+    // then " closes the string. GenLex rejects because of leftover text.
+    const stream = Stream.ofChars('"say \\"hello"')
+    const parsing = grammar.parse(stream)
+    // GenLex rejects: the string "say \" is parsed, but "hello" remains
+    expect(parsing.isAccepted()).toBe(false)
   })
 })

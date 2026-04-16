@@ -53,32 +53,35 @@ export const booleanLiteral: SingleParser<boolean> = C.stringIn([
   'true',
   'false',
 ]).map((v) => v === 'true')
-// Process escape sequences in a string: \", \\, \n, \t
+// Process escape sequences in a string: \\, \/, \n, \t
 function processEscapes(str: string): string {
-  return str.replace(/\\(["\\/nt])/g, (_, char) => {
+  return str.replace(/\\([\\/nt])/g, (_, char) => {
     switch (char) {
       case 'n':
         return '\n'
       case 't':
         return '\t'
       default:
-        return char // " or \ or /
+        return char // \ or /
     }
   })
 }
 
-// String literal: matches "..." and processes escape sequences
-// Matches any char except unescaped " or literal newline
-export const stringLiteral = quote
-  .then(
-    C.char('\\')
-      .then(C.charIn('"\\nt'))
-      .or(F.not(C.charIn('"\n')))
-      .optrep(),
-  )
-  .then(quote)
-  .map((tuple) => {
-    const raw = tuple.array().flat().join('')
-    // raw includes quotes, remove them and process escapes
-    return processEscapes(raw.slice(1, -1))
-  })
+// Build a string body parser for a given delimiter character
+function stringBody(delim: string) {
+  // Escape sequences: \\ \/ \n \t (no \" or \' -- use the other delimiter)
+  const escaped = C.char('\\').then(C.charIn('\\/nt'))
+  // Any char except the closing delimiter or newline
+  const notDelimOrNewline = F.not(C.charIn(delim + '\n'))
+  return escaped.or(notDelimOrNewline).optrep()
+    .then(C.char(delim))
+    .map((tuple) => {
+      const raw = tuple.array().flat().join('')
+      // raw ends with closing delimiter, remove it and process escapes
+      return processEscapes(raw.slice(0, -1))
+    })
+}
+
+// String literal: matches "..." or '...' and processes escape sequences
+// Opening delimiter determines which closing delimiter is expected
+export const stringLiteral = quote.flatMap((delim: string) => stringBody(delim))
