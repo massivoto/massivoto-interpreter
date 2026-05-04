@@ -36,7 +36,7 @@ describe('LangchainProvider Integration', () => {
       const provider = new LangchainProvider('anthropic', apiKey)
       const result = await provider.generateText({
         prompt: 'Say hello in exactly 3 words',
-        model: 'claude-haiku-4-20250414',
+        model: 'claude-haiku-4-5-20251001',
         maxTokens: 20,
       })
 
@@ -103,7 +103,7 @@ describe('LangchainProvider Integration', () => {
       const result = await provider.analyzeImage({
         image: redPixelPng,
         prompt: 'What color is this pixel?',
-        model: 'claude-haiku-4-20250414',
+        model: 'claude-haiku-4-5-20251001',
       })
 
       expect(result.text).toBeTruthy()
