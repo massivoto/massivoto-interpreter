@@ -34,6 +34,7 @@ import {
   StatementNode,
 } from './parser/ast.js'
 import { ExpressionEvaluator } from './evaluator/index.js'
+import { assertOutputKeyIsWritable } from './evaluator/system-variables.js'
 
 /**
  * R-FILTER-01: Canonical precedence chain for reserved arguments.
@@ -261,6 +262,8 @@ export class CoreInterpreter implements Interpreter {
     // Write output to appropriate namespace
     if (outputKey && hasOutput) {
       const target = parseOutputTarget(outputKey)
+      // R-WORKSPACE-24: any identifier starting with `_` is read-only.
+      assertOutputKeyIsWritable(target.key, instruction.output!)
       if (target.namespace === 'scope') {
         write(target.key, outcome.value, returnedContext.scopeChain)
       } else {
@@ -502,6 +505,8 @@ export class CoreInterpreter implements Interpreter {
         if (statement.collect && result.log?.value !== undefined) {
           const collectKey = statement.collect.name
           const target = parseOutputTarget(collectKey)
+          // R-WORKSPACE-24: collect= cannot target a `_*` identifier either.
+          assertOutputKeyIsWritable(target.key, statement.collect)
           if (target.namespace === 'scope') {
             write(target.key, [result.log.value], currentContext.scopeChain)
           } else {
@@ -827,6 +832,8 @@ export class CoreInterpreter implements Interpreter {
       if (collectKey) {
         resultContext = cloneExecutionContext(context)
         const target = parseOutputTarget(collectKey)
+        // R-WORKSPACE-24: collect= cannot target a `_*` identifier either.
+        assertOutputKeyIsWritable(target.key, instruction.collect!)
         if (target.namespace === 'scope') {
           write(target.key, [], resultContext.scopeChain)
         } else {
@@ -896,6 +903,8 @@ export class CoreInterpreter implements Interpreter {
     // R-FILTER-102: write collected results to context
     if (collectKey) {
       const target = parseOutputTarget(collectKey)
+      // R-WORKSPACE-24: collect= cannot target a `_*` identifier either.
+      assertOutputKeyIsWritable(target.key, instruction.collect!)
       if (target.namespace === 'scope') {
         write(target.key, collected, currentContext.scopeChain)
       } else {
